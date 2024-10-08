@@ -64,10 +64,10 @@ def main():
     st.markdown(title_css, unsafe_allow_html=True)
 
     # Sidebar
-    st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Ashish Tukaral</h1>", unsafe_allow_html=True)
+    st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
 
-    st.sidebar.write("GitHub profile : (https://github.com/AshishTukaral)")
-    st.sidebar.write("LinkedIn profile : (https://www.linkedin.com/in/ashish-tukaral-9627b6207)")
+    st.sidebar.write("GitHub profile : (https://github.com/Shivam31817)")
+    st.sidebar.write("LinkedIn profile : (https://www.linkedin.com/in/shivam-yadav-135642231/)")
 
     st.sidebar.title("About Project :")
     st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor. It utilizes machine learning to predict thyroid diagnosis based on various patient attributes such as age, sex, medical history, and laboratory test results. Users can input patient data and receive an immediate diagnosis prediction, helping medical professionals make informed decisions efficiently.")
