@@ -148,6 +148,6 @@ def main():
 
         if detect_button:
             # Preprocess inputs
-            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds,
+            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds)
 
 
