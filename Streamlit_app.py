@@ -1,5 +1,6 @@
 import streamlit as st
 import pickle
+from PIL import Image
 
 # Load the trained model
 with open('model.pkl', 'rb') as f:
@@ -49,29 +50,21 @@ def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid
             thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
             goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI]
 
-
 # Function to predict the diagnosis based on inputs
 def predict_diagnosis(inputs):
     output = model.predict([inputs])[0]
     return output
 
-
 # Streamlit app
 def main():
-    # CSS for background image and title
-    st.markdown("""
-        <style>
-        body {
-            background-image: url('https://your-image-url.com/image.jpg');  /* Change this to your image URL */
-            background-size: cover;
-            background-repeat: no-repeat;
-            color: white; /* Change text color for better visibility */
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
+    # Load a local image for background
+    image = Image.open('path_to_your_image.jpg')  # Specify the path to your local image file
+    
     # Title
     st.markdown(title_css, unsafe_allow_html=True)
+
+    # Add background image
+    st.image(image, use_column_width=True, caption='', output_format='auto')
 
     # Sidebar
     st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
@@ -155,13 +148,6 @@ def main():
 
         if detect_button:
             # Preprocess inputs
-            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
-                                       pregnant,
-                                       thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
-                                       lithium,
-                                       goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
-            # Get prediction
-            diagnosis_num = predict_diagnosis(inputs)
-            diagnosis_label
+            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds,
 
 
