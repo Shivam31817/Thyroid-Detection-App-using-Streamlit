@@ -1,7 +1,5 @@
 import streamlit as st
 import pickle
-import nltk
-from nltk.tokenize import word_tokenize
 
 # Load the trained model
 with open('model.pkl', 'rb') as f:
@@ -54,19 +52,10 @@ def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid
 
 # Function to predict the diagnosis based on inputs
 def predict_diagnosis(inputs):
+    # Assuming 'model' is a trained machine learning model
+    # Replace 'model.predict()' with the actual function to make predictions
     output = model.predict([inputs])[0]
     return output
-
-
-# Function to preprocess symptoms input
-def preprocess_symptoms(input_text):
-    tokens = word_tokenize(input_text.lower())
-    symptoms = ['fatigue', 'weight gain', 'weight loss', 'sensitivity to cold', 
-                'sensitivity to heat', 'dry skin', 'hair loss', 'mood swings',
-                'irregular periods', 'goitre', 'palpitations', 'tremors']
-    
-    matched_symptoms = [symptom for symptom in symptoms if symptom in tokens]
-    return matched_symptoms
 
 
 # Streamlit app
@@ -76,6 +65,7 @@ def main():
 
     # Sidebar
     st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
+
     st.sidebar.write("GitHub profile : (https://github.com/Shivam31817)")
     st.sidebar.write("LinkedIn profile : (https://www.linkedin.com/in/shivam-yadav-135642231/)")
 
@@ -98,7 +88,7 @@ def main():
         - Lithium: Whether patient takes lithium (bool)
         - Goitre: Whether patient has goitre (bool)
         - Tumor: Whether patient has tumor (bool)
-        - Hypopituitary: Whether patient has hypopituitary gland (float)
+        - Hypopituitary: Whether patient has hyperpituitary gland (float)
         - Psych: Whether patient is psych (bool)
         - TSH: TSH level in blood from lab work (float)
         - T3: T3 level in blood from lab work (float)
@@ -106,20 +96,6 @@ def main():
         - T4U: T4U level in blood from lab work (float)
         - FTI: FTI level in blood from lab work (float)
     """)
-
-    # Symptom Checker Section
-    st.header("Symptom Checker")
-    user_input = st.text_area("Describe your symptoms:")
-
-    if st.button("Check Symptoms"):
-        if user_input:
-            matched_symptoms = preprocess_symptoms(user_input)
-            if matched_symptoms:
-                st.success(f"Detected symptoms: {', '.join(matched_symptoms)}")
-            else:
-                st.warning("No recognizable symptoms related to thyroid disorders were found.")
-        else:
-            st.error("Please enter your symptoms.")
 
     # Input fields
     col1, col2, col3 = st.columns(3)
@@ -171,9 +147,10 @@ def main():
         if detect_button:
             # Preprocess inputs
             inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
-                                       pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, 
-                                       query_hyperthyroid, lithium, goitre, tumor, hypopituitary, psych, 
-                                       TSH, T3, TT4, T4U, FTI)
+                                       pregnant,
+                                       thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
+                                       lithium,
+                                       goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
             # Get prediction
             diagnosis_num = predict_diagnosis(inputs)
             diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
@@ -182,5 +159,5 @@ def main():
                 unsafe_allow_html=True)
 
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     main()
