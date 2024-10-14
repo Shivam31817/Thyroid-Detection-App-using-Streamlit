@@ -1,6 +1,5 @@
 import streamlit as st
 import pickle
-from PIL import Image
 
 # Load the trained model
 with open('model.pkl', 'rb') as f:
@@ -13,12 +12,12 @@ diagnoses = {
     2: 'Hyperthyroid'
 }
 
-# Colors for diagnosis display
+# Predicted diagnosis color
 diagnosis_color = '#F63366'
 title_color = '#F63366'  # Title color
 title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diagnosis Predictor</h1>"
 
-# Button color
+# Detect button color
 detect_button_color = '#F63366'
 
 # Function to preprocess inputs before prediction
@@ -50,31 +49,30 @@ def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid
             thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
             goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI]
 
+
 # Function to predict the diagnosis based on inputs
 def predict_diagnosis(inputs):
+    # Assuming 'model' is a trained machine learning model
+    # Replace 'model.predict()' with the actual function to make predictions
     output = model.predict([inputs])[0]
     return output
 
+
 # Streamlit app
 def main():
-    # Load a local image for background
-    image = Image.open('path_to_your_image.jpg')  # Specify the path to your local image file
-    
     # Title
     st.markdown(title_css, unsafe_allow_html=True)
 
-    # Add background image
-    st.image(image, use_column_width=True, caption='', output_format='auto')
-
     # Sidebar
     st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
-    st.sidebar.write("GitHub profile: [link](https://github.com/Shivam31817)")
-    st.sidebar.write("LinkedIn profile: [link](https://www.linkedin.com/in/shivam-yadav-135642231/)")
 
-    st.sidebar.title("About Project:")
+    st.sidebar.write("GitHub profile : (https://github.com/Shivam31817)")
+    st.sidebar.write("LinkedIn profile : (https://www.linkedin.com/in/shivam-yadav-135642231/)")
+
+    st.sidebar.title("About Project :")
     st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor. It utilizes machine learning to predict thyroid diagnosis based on various patient attributes such as age, sex, medical history, and laboratory test results. Users can input patient data and receive an immediate diagnosis prediction, helping medical professionals make informed decisions efficiently.")
 
-    st.sidebar.title("Attributes Information:")
+    st.sidebar.title("Attributes Information :")
     st.sidebar.write("""
         - Age: Age of the patient (int)
         - Sex: Sex patient identifies (str)
@@ -90,7 +88,7 @@ def main():
         - Lithium: Whether patient takes lithium (bool)
         - Goitre: Whether patient has goitre (bool)
         - Tumor: Whether patient has tumor (bool)
-        - Hypopituitary: Whether patient is hypopituitary (bool)
+        - Hypopituitary: Whether patient has hyperpituitary gland (float)
         - Psych: Whether patient is psych (bool)
         - TSH: TSH level in blood from lab work (float)
         - T3: T3 level in blood from lab work (float)
@@ -148,6 +146,20 @@ def main():
 
         if detect_button:
             # Preprocess inputs
-            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds)
+            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
+                                       pregnant,
+                                       thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
+                                       lithium,
+                                       goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
+            # Get prediction
+            diagnosis_num = predict_diagnosis(inputs)
+            diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
+            st.markdown(
+                f"<h1 style='text-align: center; color: {diagnosis_color};'>{diagnosis_label}</h1>",
+                unsafe_allow_html=True)
+
+
+if __name__ == '__main__':
+    main()
 
 
