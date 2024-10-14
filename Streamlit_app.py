@@ -66,7 +66,7 @@ def main():
     background_image = """
     <style>
         .stApp {
-            background-image: url('https://img.freepik.com/premium-photo/thyroid-gland-hologram-blue-background-ultrasound-diagnostics-thyroid-diseases_99433-8618.jpg');
+            background-image: url('https://www.shutterstock.com/shutterstock/photos/2076134416/display_1500/stock-vector-endocrinologists-diagnose-and-treat-human-thyroid-gland-doctors-make-blood-test-on-hormones-2076134416.jpg');
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
@@ -175,6 +175,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
