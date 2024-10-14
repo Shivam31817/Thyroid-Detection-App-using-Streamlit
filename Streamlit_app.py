@@ -62,7 +62,7 @@ def main():
     st.markdown("""
         <style>
         body {
-            background-image: url('https://your-image-url.com/image.jpg');
+            background-image: url('https://your-image-url.com/image.jpg');  /* Change this to your image URL */
             background-size: cover;
             background-repeat: no-repeat;
             color: white; /* Change text color for better visibility */
@@ -162,12 +162,6 @@ def main():
                                        goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
             # Get prediction
             diagnosis_num = predict_diagnosis(inputs)
-            diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
-            st.markdown(
-                f"<h1 style='text-align: center; color: {diagnosis_color};'>{diagnosis_label}</h1>",
-                unsafe_allow_html=True)
+            diagnosis_label
 
-
-if __name__ == '__main__':
-    main()
 
