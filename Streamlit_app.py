@@ -12,12 +12,12 @@ diagnoses = {
     2: 'Hyperthyroid'
 }
 
-# Predicted diagnosis color
+# Colors for diagnosis display
 diagnosis_color = '#F63366'
 title_color = '#F63366'  # Title color
 title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diagnosis Predictor</h1>"
 
-# Detect button color
+# Button color
 detect_button_color = '#F63366'
 
 # Function to preprocess inputs before prediction
@@ -52,27 +52,36 @@ def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid
 
 # Function to predict the diagnosis based on inputs
 def predict_diagnosis(inputs):
-    # Assuming 'model' is a trained machine learning model
-    # Replace 'model.predict()' with the actual function to make predictions
     output = model.predict([inputs])[0]
     return output
 
 
 # Streamlit app
 def main():
+    # CSS for background image and title
+    st.markdown("""
+        <style>
+        body {
+            background-image: url('https://your-image-url.com/image.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            color: white; /* Change text color for better visibility */
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
     # Title
     st.markdown(title_css, unsafe_allow_html=True)
 
     # Sidebar
     st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
+    st.sidebar.write("GitHub profile: [link](https://github.com/Shivam31817)")
+    st.sidebar.write("LinkedIn profile: [link](https://www.linkedin.com/in/shivam-yadav-135642231/)")
 
-    st.sidebar.write("GitHub profile : (https://github.com/Shivam31817)")
-    st.sidebar.write("LinkedIn profile : (https://www.linkedin.com/in/shivam-yadav-135642231/)")
-
-    st.sidebar.title("About Project :")
+    st.sidebar.title("About Project:")
     st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor. It utilizes machine learning to predict thyroid diagnosis based on various patient attributes such as age, sex, medical history, and laboratory test results. Users can input patient data and receive an immediate diagnosis prediction, helping medical professionals make informed decisions efficiently.")
 
-    st.sidebar.title("Attributes Information :")
+    st.sidebar.title("Attributes Information:")
     st.sidebar.write("""
         - Age: Age of the patient (int)
         - Sex: Sex patient identifies (str)
@@ -88,7 +97,7 @@ def main():
         - Lithium: Whether patient takes lithium (bool)
         - Goitre: Whether patient has goitre (bool)
         - Tumor: Whether patient has tumor (bool)
-        - Hypopituitary: Whether patient has hyperpituitary gland (float)
+        - Hypopituitary: Whether patient is hypopituitary (bool)
         - Psych: Whether patient is psych (bool)
         - TSH: TSH level in blood from lab work (float)
         - T3: T3 level in blood from lab work (float)
@@ -161,3 +170,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
