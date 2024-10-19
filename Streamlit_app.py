@@ -1,8 +1,5 @@
 import streamlit as st
 import pickle
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Load the trained model
 with open('model.pkl', 'rb') as f:
@@ -15,19 +12,13 @@ diagnoses = {
     2: 'Hyperthyroid'
 }
 
-# Set colors for the app
+# Predicted diagnosis color
 diagnosis_color = '#F63366'
-title_color = '#F63366'
-detect_button_color = '#F63366'
+title_color = '#F63366'  # Title color
+title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diagnosis Predictor</h1>"
 
-# Healthy ranges for lab results (for visualization)
-healthy_ranges = {
-    'TSH': (0.4, 4.0),  # Normal TSH range
-    'T3': (80, 200),    # Normal T3 range (ng/dL)
-    'TT4': (5.0, 12.0), # Normal TT4 range (ug/dL)
-    'T4U': (0.7, 1.8),  # Normal T4U range
-    'FTI': (6.5, 12.5)  # Normal FTI range
-}
+# Detect button color
+detect_button_color = '#F63366'
 
 # Function to preprocess inputs before prediction
 def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
@@ -58,47 +49,79 @@ def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid
             thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
             goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI]
 
-# Function to predict the diagnosis and provide confidence score
+
+# Function to predict the diagnosis based on inputs
 def predict_diagnosis(inputs):
-    prediction = model.predict([inputs])[0]
-    prediction_proba = model.predict_proba([inputs])[0]  # Confidence score (probability)
-    return prediction, prediction_proba
+    # Assuming 'model' is a trained machine learning model
+    output = model.predict([inputs])[0]
+    return output
 
-# Function to plot feature importance (if your model supports it)
-def plot_feature_importance():
-    if hasattr(model, 'feature_importances_'):
-        feature_importances = model.feature_importances_
-        feature_names = ['Age', 'Sex', 'On Thyroxine', 'Query On Thyroxine', 'On Antithyroid Meds', 'Sick', 'Pregnant',
-                         'Thyroid Surgery', 'I131 Treatment', 'Query Hypothyroid', 'Query Hyperthyroid', 'Lithium',
-                         'Goitre', 'Tumor', 'Hypopituitary', 'Psych', 'TSH', 'T3', 'TT4', 'T4U', 'FTI']
-        sns.barplot(y=feature_names, x=feature_importances, palette="viridis")
-        plt.title("Feature Importance")
-        plt.xlabel("Importance")
-        st.pyplot()
-
-# Function to validate inputs
-def validate_inputs(age, TSH, T3, TT4, T4U, FTI):
-    if age < 0 or age > 120:
-        return "Age must be between 0 and 120"
-    if TSH < 0 or T3 < 0 or TT4 < 0 or T4U < 0 or FTI < 0:
-        return "Lab values cannot be negative"
-    return None
 
 # Streamlit app
 def main():
     # Title
-    st.markdown(f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diagnosis Predictor</h1>", unsafe_allow_html=True)
+    st.markdown(title_css, unsafe_allow_html=True)
+
+    # Add custom CSS for background image
+    background_image = """
+    <style>
+        .stApp {
+            background-image: url('https://www.shutterstock.com/shutterstock/photos/2076134416/display_1500/stock-vector-endocrinologists-diagnose-and-treat-human-thyroid-gland-doctors-make-blood-test-on-hormones-2076134416.jpg
+');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: center;
+            color: white;  /* Change text color to white for better visibility */
+        }
+    </style>
+    """
+    st.markdown(background_image, unsafe_allow_html=True)
+
+    # Sidebar
+    st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
+
+    st.sidebar.write("GitHub profile: (https://github.com/Shivam31817)")
+    st.sidebar.write("LinkedIn profile: (https://www.linkedin.com/in/shivam-yadav-135642231/)")
+
+    st.sidebar.title("About Project :")
+    st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor. It utilizes machine learning to predict thyroid diagnosis based on various patient attributes such as age, sex, medical history, and laboratory test results. Users can input patient data and receive an immediate diagnosis prediction, helping medical professionals make informed decisions efficiently.")
+
+    st.sidebar.title("Attributes Information :")
+    st.sidebar.write("""
+        - Age: Age of the patient (int)
+        - Sex: Sex patient identifies (str)
+        - On Thyroxine: Whether patient is on thyroxine (bool)
+        - Query on Thyroxine: Whether patient is on thyroxine (bool)
+        - On Antithyroid Meds: Whether patient is on antithyroid meds (bool)
+        - Sick: Whether patient is sick (bool)
+        - Pregnant: Whether patient is pregnant (bool)
+        - Thyroid Surgery: Whether patient has undergone thyroid surgery (bool)
+        - I131 Treatment: Whether patient is undergoing I131 treatment (bool)
+        - Query Hypothyroid: Whether patient believes they have hypothyroid (bool)
+        - Query Hyperthyroid: Whether patient believes they have hyperthyroid (bool)
+        - Lithium: Whether patient takes lithium (bool)
+        - Goitre: Whether patient has goitre (bool)
+        - Tumor: Whether patient has tumor (bool)
+        - Hypopituitary: Whether patient is hypopituitary (bool)
+        - Psych: Whether patient is psych (bool)
+        - TSH: TSH level in blood from lab work (float)
+        - T3: T3 level in blood from lab work (float)
+        - TT4: TT4 level in blood from lab work (float)
+        - T4U: T4U level in blood from lab work (float)
+        - FTI: FTI level in blood from lab work (float)
+    """)
 
     # Input fields
     col1, col2, col3 = st.columns(3)
     with col1:
-        age = st.number_input('Age', value=30, min_value=0, max_value=120)
+        age = st.number_input('Age', value=None)
         query_on_thyroxine = st.selectbox('Query On Thyroxine', options=['', 'No', 'Yes'])
         pregnant = st.selectbox('Pregnant', options=['', 'No', 'Yes'])
         query_hypothyroid = st.selectbox('Query Hypothyroid', options=['', 'No', 'Yes'])
         goitre = st.selectbox('Goitre', options=['', 'No', 'Yes'])
         psych = st.selectbox('Psych', options=['', 'No', 'Yes'])
-        TT4 = st.number_input('TT4', value=8.0)
+        TT4 = st.number_input('TT4', value=None)
 
     with col2:
         sex = st.selectbox('Sex', options=['', 'M', 'F'])
@@ -106,8 +129,8 @@ def main():
         thyroid_surgery = st.selectbox('Thyroid Surgery', options=['', 'No', 'Yes'])
         query_hyperthyroid = st.selectbox('Query Hyperthyroid', options=['', 'No', 'Yes'])
         tumor = st.selectbox('Tumor', options=['', 'No', 'Yes'])
-        TSH = st.number_input('TSH', value=2.5)
-        T4U = st.number_input('T4U', value=1.0)
+        TSH = st.number_input('TSH', value=None)
+        T4U = st.number_input('T4U', value=None)
 
     with col3:
         on_thyroxine = st.selectbox('On Thyroxine', options=['', 'No', 'Yes'])
@@ -115,52 +138,41 @@ def main():
         I131_treatment = st.selectbox('I131 Treatment', options=['', 'No', 'Yes'])
         lithium = st.selectbox('Lithium', options=['', 'No', 'Yes'])
         hypopituitary = st.selectbox('Hypopituitary', options=['', 'No', 'Yes'])
-        T3 = st.number_input('T3', value=100.0)
-        FTI = st.number_input('FTI', value=9.0)
+        T3 = st.number_input('T3', value=None)
+        FTI = st.number_input('FTI', value=None)
 
     # Detect button
-    if st.button('Detect'):
-        # Validate inputs
-        validation_error = validate_inputs(age, TSH, T3, TT4, T4U, FTI)
-        if validation_error:
-            st.error(validation_error)
-        else:
+    with col2:
+        detect_button = st.button('Detect', key='predict_button')
+        detect_button_container = st.container()
+        with detect_button_container:
+            detect_button_css = f"""
+                <style>
+                    .stButton > button:first-child {{
+                        width: 100%;
+                        color: white;
+                        border-color: {detect_button_color};
+                        border-radius: 5px;
+                        padding: 10px;
+                    }}
+                </style>
+            """
+            st.markdown(detect_button_css, unsafe_allow_html=True)
+
+        if detect_button:
             # Preprocess inputs
             inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
-                                       pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, 
-                                       query_hyperthyroid, lithium, goitre, tumor, hypopituitary, psych, 
-                                       TSH, T3, TT4, T4U, FTI)
-
-            # Get prediction and confidence score
-            diagnosis_num, diagnosis_proba = predict_diagnosis(inputs)
+                                       pregnant,
+                                       thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
+                                       lithium,
+                                       goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
+            # Get prediction
+            diagnosis_num = predict_diagnosis(inputs)
             diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
+            st.markdown(
+                f"<h1 style='text-align: center; color: {diagnosis_color};'>Diagnosis: {diagnosis_label}</h1>",
+                unsafe_allow_html=True)
 
-            # Display diagnosis and confidence
-            st.markdown(f"<h1 style='text-align: center; color: {diagnosis_color};'>{diagnosis_label}</h1>", unsafe_allow_html=True)
-            st.markdown(f"<h4 style='text-align: center;'>Confidence: {max(diagnosis_proba) * 100:.2f}%</h4>", unsafe_allow_html=True)
-
-            # Explanation based on diagnosis
-            if diagnosis_num == 1:
-                st.info("Hypothyroid detected. Consult an endocrinologist for further evaluation.")
-            elif diagnosis_num == 2:
-                st.info("Hyperthyroid detected. Treatment may include antithyroid medication or surgery.")
-            else:
-                st.info("No thyroid disorder detected. If symptoms persist, consider further testing.")
-
-            # Plot feature importance
-            st.subheader("Feature Importance")
-            plot_feature_importance()
-
-            # Visualize lab results vs. healthy range
-            st.subheader("Lab Results vs Healthy Range")
-            fig, ax = plt.subplots()
-            ax.bar(healthy_ranges.keys(), [TSH, T3, TT4, T4U, FTI], color='lightblue', label='Your Values')
-            for i, (key, (low, high)) in enumerate(healthy_ranges.items()):
-                ax.plot([i-0.4, i+0.4], [low, low], color='green', linestyle='--')
-                ax.plot([i-0.4, i+0.4], [high, high], color='green', linestyle='--')
-            ax.set_ylabel('Lab Values')
-            ax.legend()
-            st.pyplot(fig)
 
 if __name__ == '__main__':
     main()
