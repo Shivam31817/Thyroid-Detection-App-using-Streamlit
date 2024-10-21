@@ -16,6 +16,15 @@ diagnoses = {
     2: 'Hyperthyroid'
 }
 
+# Define reference ranges for hormone levels
+reference_ranges = {
+    'TSH': (0.4, 4.0),
+    'T3': (2.3, 4.2),
+    'TT4': (4.5, 12.0),
+    'T4U': (1.0, 1.7),
+    'FTI': (78.0, 150.0),
+}
+
 # Predicted diagnosis color
 diagnosis_color = '#F63366'
 title_color = '#F63366'  # Title color
@@ -25,7 +34,6 @@ title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diag
 def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
                       thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
                       goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI):
-
     # Replace 'Yes' with 1 and 'No' with 0
     binary_map = {'Yes': 1, 'No': 0, '': None}
     on_thyroxine = binary_map.get(on_thyroxine)
@@ -101,14 +109,7 @@ def main():
     """
     st.markdown(background_image, unsafe_allow_html=True)
 
-    # Sidebar for navigation
-    st.sidebar.title("Navigation")
-    st.sidebar.markdown("<h3 style='color: #F63366;'>Sections</h3>", unsafe_allow_html=True)
-    st.sidebar.write("1. About")
-    st.sidebar.write("2. Instructions")
-    st.sidebar.write("3. Contact")
-    
-    # Sidebar info
+    # Sidebar
     st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
     st.sidebar.write("GitHub: [Shivam31817](https://github.com/Shivam31817)")
     st.sidebar.write("LinkedIn: [Shivam Yadav](https://www.linkedin.com/in/shivam-yadav-135642231/)")
@@ -117,21 +118,22 @@ def main():
     st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
 
     # Symptom input field
-    symptom_text = st.text_area("Enter your symptoms (e.g., fatigue, anxiety, weight gain):", 
+    symptom_text = st.text_area("Enter your symptoms (e.g., fatigue, anxiety, weight gain):",
                                  help="Please list your symptoms separated by commas.")
 
     # Input fields for numeric data
     col1, col2, col3 = st.columns(3)
+    
     with col1:
-        age = st.number_input('Age', value=None, help="Enter your age.")
-        query_on_thyroxine = st.selectbox('Query On Thyroxine', options=['', 'No', 'Yes'], 
+        age = st.number_input('Age', value=None, min_value=0, max_value=120, help="Enter your age.")
+        query_on_thyroxine = st.selectbox('Query On Thyroxine', options=['', 'No', 'Yes'],
                                             help="Is there a query about thyroxine?")
         pregnant = st.selectbox('Pregnant', options=['', 'No', 'Yes'], help="Are you pregnant?")
         query_hypothyroid = st.selectbox('Query Hypothyroid', options=['', 'No', 'Yes'], 
                                           help="Is there a query about hypothyroidism?")
         goitre = st.selectbox('Goitre', options=['', 'No', 'Yes'], help="Do you have goitre?")
         psych = st.selectbox('Psych', options=['', 'No', 'Yes'], help="Do you have a psychological condition?")
-        TT4 = st.number_input('TT4', value=None, help="Enter your TT4 level.")
+        TT4 = st.number_input('TT4', value=None, min_value=0.0, help="Enter your TT4 level.")
 
     with col2:
         sex = st.selectbox('Sex', options=['', 'M', 'F'], help="Select your gender.")
@@ -141,34 +143,37 @@ def main():
                                         help="Have you had thyroid surgery?")
         query_hyperthyroid = st.selectbox('Query Hyperthyroid', options=['', 'No', 'Yes'], 
                                            help="Is there a query about hyperthyroidism?")
-        tumor = st.selectbox('Tumor', options=['', 'No', 'Yes'], help="Do you have any tumors?")
-        TSH = st.number_input('TSH', value=None, help="Enter your TSH level.")
-        T4U = st.number_input('T4U', value=None, help="Enter your T4U level.")
+        tumor = st.selectbox('Tumor', options=['', 'No', 'Yes'], help="Do you have a tumor?")
+        TSH = st.number_input('TSH', value=None, min_value=0.0, help="Enter your TSH level.")
+        T4U = st.number_input('T4U', value=None, min_value=0.0, help="Enter your T4U level.")
 
     with col3:
-        on_thyroxine = st.selectbox('On Thyroxine', options=['', 'No', 'Yes'], 
-                                     help="Are you currently on thyroxine?")
+        on_thyroxine = st.selectbox('On Thyroxine', options=['', 'No', 'Yes'], help="Are you on thyroxine?")
         sick = st.selectbox('Sick', options=['', 'No', 'Yes'], help="Are you currently sick?")
         I131_treatment = st.selectbox('I131 Treatment', options=['', 'No', 'Yes'], 
-                                       help="Have you undergone I131 treatment?")
+                                       help="Have you received I131 treatment?")
         lithium = st.selectbox('Lithium', options=['', 'No', 'Yes'], help="Are you taking lithium?")
         hypopituitary = st.selectbox('Hypopituitary', options=['', 'No', 'Yes'], 
                                       help="Do you have hypopituitarism?")
-        T3 = st.number_input('T3', value=None, help="Enter your T3 level.")
-        FTI = st.number_input('FTI', value=None, help="Enter your FTI level.")
+        T3 = st.number_input('T3', value=None, min_value=0.0, help="Enter your T3 level.")
+        FTI = st.number_input('FTI', value=None, min_value=0.0, help="Enter your FTI level.")
 
     # Detect button
     with col2:
         detect_button = st.button('Detect', key='predict_button')
-        clear_button = st.button('Clear', key='clear_button')
-        
         if detect_button:
-            # Show spinner while predicting
+            # Show a progress bar while predicting
             with st.spinner("Making predictions..."):
                 # Preprocess inputs
                 inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
                                            pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
                                            lithium, goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
+
+                # Validate hormone levels
+                for hormone, (low, high) in reference_ranges.items():
+                    value = locals()[hormone]  # Fetch the variable by name
+                    if value is not None and (value < low or value > high):
+                        st.warning(f"Warning: {hormone} level {value} is outside the normal range ({low} - {high}).")
 
                 # Get prediction from ML model
                 diagnosis_num = predict_diagnosis(inputs)
@@ -179,29 +184,12 @@ def main():
                 nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
 
                 # Display diagnosis
-                st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                            f"<h1 style='text-align: center; color: white;'>ML Diagnosis: {diagnosis_label}</h1>"
-                            "</div>", unsafe_allow_html=True)
+                st.markdown(f"<h1 style='text-align: center; color: {diagnosis_color};'>ML Diagnosis: {diagnosis_label}</h1>", unsafe_allow_html=True)
 
                 if nlp_diagnosis:
-                    st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                                f"<h2 style='text-align: center; color: white;'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>"
-                                "</div>", unsafe_allow_html=True)
+                    st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>", unsafe_allow_html=True)
                 else:
                     st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
 
-        if clear_button:
-            # Clear all input fields
-            st.experimental_rerun()  # Rerun the script to reset all inputs
-
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-
