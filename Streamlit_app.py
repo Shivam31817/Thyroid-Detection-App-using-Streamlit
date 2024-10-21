@@ -1,5 +1,9 @@
 import streamlit as st
 import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+import re
+import numpy as np
 
 # Load the trained model
 with open('model.pkl', 'rb') as f:
@@ -19,6 +23,10 @@ title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diag
 
 # Detect button color
 detect_button_color = '#F63366'
+
+# Initialize a simple NLP model for symptom classification
+vectorizer = TfidfVectorizer()
+nlp_model = LogisticRegression()
 
 # Function to preprocess inputs before prediction
 def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
@@ -49,13 +57,30 @@ def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid
             thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
             goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI]
 
-
 # Function to predict the diagnosis based on inputs
 def predict_diagnosis(inputs):
-    # Assuming 'model' is a trained machine learning model
     output = model.predict([inputs])[0]
     return output
 
+# Function to analyze symptoms using NLP
+def analyze_symptoms(symptom_text):
+    # Example: simple keyword matching (can be replaced by a more sophisticated NLP model)
+    symptoms_map = {
+        'fatigue': 1,    # Hypothyroid
+        'weight gain': 1,  # Hypothyroid
+        'anxiety': 2,   # Hyperthyroid
+        'weight loss': 2,  # Hyperthyroid
+    }
+
+    detected_conditions = set()
+
+    # Basic symptom analysis by keyword matching
+    symptom_text_cleaned = re.sub(r'[^\w\s]', '', symptom_text.lower())
+    for symptom, condition in symptoms_map.items():
+        if symptom in symptom_text_cleaned:
+            detected_conditions.add(condition)
+
+    return detected_conditions
 
 # Streamlit app
 def main():
@@ -66,8 +91,7 @@ def main():
     background_image = """
     <style>
         .stApp {
-            background-image: url('https://www.shutterstock.com/shutterstock/photos/2076134416/display_1500/stock-vector-endocrinologists-diagnose-and-treat-human-thyroid-gland-doctors-make-blood-test-on-hormones-2076134416.jpg
-');
+            background-image: url('https://www.shutterstock.com/shutterstock/photos/2076134416/display_1500/stock-vector-endocrinologists-diagnose-and-treat-human-thyroid-gland-doctors-make-blood-test-on-hormones-2076134416.jpg');
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
@@ -80,39 +104,16 @@ def main():
 
     # Sidebar
     st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
-
     st.sidebar.write("GitHub profile: (https://github.com/Shivam31817)")
     st.sidebar.write("LinkedIn profile: (https://www.linkedin.com/in/shivam-yadav-135642231/)")
-
+    
     st.sidebar.title("About Project :")
-    st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor. It utilizes machine learning to predict thyroid diagnosis based on various patient attributes such as age, sex, medical history, and laboratory test results. Users can input patient data and receive an immediate diagnosis prediction, helping medical professionals make informed decisions efficiently.")
+    st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
 
-    st.sidebar.title("Attributes Information :")
-    st.sidebar.write("""
-        - Age: Age of the patient (int)
-        - Sex: Sex patient identifies (str)
-        - On Thyroxine: Whether patient is on thyroxine (bool)
-        - Query on Thyroxine: Whether patient is on thyroxine (bool)
-        - On Antithyroid Meds: Whether patient is on antithyroid meds (bool)
-        - Sick: Whether patient is sick (bool)
-        - Pregnant: Whether patient is pregnant (bool)
-        - Thyroid Surgery: Whether patient has undergone thyroid surgery (bool)
-        - I131 Treatment: Whether patient is undergoing I131 treatment (bool)
-        - Query Hypothyroid: Whether patient believes they have hypothyroid (bool)
-        - Query Hyperthyroid: Whether patient believes they have hyperthyroid (bool)
-        - Lithium: Whether patient takes lithium (bool)
-        - Goitre: Whether patient has goitre (bool)
-        - Tumor: Whether patient has tumor (bool)
-        - Hypopituitary: Whether patient is hypopituitary (bool)
-        - Psych: Whether patient is psych (bool)
-        - TSH: TSH level in blood from lab work (float)
-        - T3: T3 level in blood from lab work (float)
-        - TT4: TT4 level in blood from lab work (float)
-        - T4U: T4U level in blood from lab work (float)
-        - FTI: FTI level in blood from lab work (float)
-    """)
+    # Symptom input field
+    symptom_text = st.text_area("Enter your symptoms (e.g., fatigue, anxiety, weight gain):")
 
-    # Input fields
+    # Input fields for numeric data
     col1, col2, col3 = st.columns(3)
     with col1:
         age = st.number_input('Age', value=None)
@@ -144,38 +145,32 @@ def main():
     # Detect button
     with col2:
         detect_button = st.button('Detect', key='predict_button')
-        detect_button_container = st.container()
-        with detect_button_container:
-            detect_button_css = f"""
-                <style>
-                    .stButton > button:first-child {{
-                        width: 100%;
-                        color: white;
-                        border-color: {detect_button_color};
-                        border-radius: 5px;
-                        padding: 10px;
-                    }}
-                </style>
-            """
-            st.markdown(detect_button_css, unsafe_allow_html=True)
-
         if detect_button:
             # Preprocess inputs
             inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
-                                       pregnant,
-                                       thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
-                                       lithium,
-                                       goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
-            # Get prediction
+                                       pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
+                                       lithium, goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
+
+            # Get prediction from ML model
             diagnosis_num = predict_diagnosis(inputs)
             diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
-            st.markdown(
-                f"<h1 style='text-align: center; color: {diagnosis_color};'>Diagnosis: {diagnosis_label}</h1>",
-                unsafe_allow_html=True)
+
+            # Analyze symptoms using NLP
+            nlp_conditions = analyze_symptoms(symptom_text)
+            nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
+
+            # Display diagnosis
+            st.markdown(f"<h1 style='text-align: center; color: {diagnosis_color};'>ML Diagnosis: {diagnosis_label}</h1>", unsafe_allow_html=True)
+
+            if nlp_diagnosis:
+                st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
 
 
 if __name__ == '__main__':
     main()
+
 
 
 
