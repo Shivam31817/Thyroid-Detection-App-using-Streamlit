@@ -87,28 +87,6 @@ def check_login(username, password):
     return username == "user123" and password == "password123"
 
 # Streamlit app
-def main():
-    # Check if user is logged in using session state
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
-
-    # Login page
-    if not st.session_state['logged_in']:
-        st.title("Login")
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        login_button = st.button("Login")
-
-        if login_button:
-            if check_login(username, password):
-                st.session_state['logged_in'] = True
-                st.success("Login successful!")
-                st.experimental_rerun()  # Refresh to load the app content
-            else:
-                st.error("Invalid username or password")
-    else:
-        # Title
-        st.markdown(title_css, unsafe_allow_html=True)
 
         # Add custom CSS for background image
         background_image = """
