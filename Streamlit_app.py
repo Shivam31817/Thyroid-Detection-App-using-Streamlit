@@ -96,7 +96,7 @@ def main():
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-position: center;
-            color: white;  /* Change text color to white for better visibility */
+            color: black;  /* Change text color to black for better visibility */
         }
     </style>
     """
