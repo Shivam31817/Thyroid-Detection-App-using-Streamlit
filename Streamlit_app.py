@@ -1,39 +1,18 @@
+import numpy as np
 import streamlit as st
 import pickle
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-import re
-import numpy as np
 
 # Load the trained model
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
 # Define diagnosis mapping dictionary
-diagnoses = {
-    0: 'Negative',
-    1: 'Hypothyroid',
-    2: 'Hyperthyroid'
-}
-
-# Predicted diagnosis color
-diagnosis_color = '#F63366'
-title_color = '#F63366'  # Title color
-title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diagnosis Predictor</h1>"
-
-# Detect button color
-detect_button_color = '#F63366'
-
-# Initialize a simple NLP model for symptom classification
-vectorizer = TfidfVectorizer()
-nlp_model = LogisticRegression()
+diagnoses = {0: 'Negative', 1: 'Hypothyroid', 2: 'Hyperthyroid'}
 
 # Function to preprocess inputs before prediction
 def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
                       thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
                       goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI):
-
-    # Replace 'Yes' with 1 and 'No' with 0
     binary_map = {'Yes': 1, 'No': 0, '': None}
     on_thyroxine = binary_map.get(on_thyroxine)
     query_on_thyroxine = binary_map.get(query_on_thyroxine)
@@ -49,127 +28,133 @@ def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid
     tumor = binary_map.get(tumor)
     hypopituitary = binary_map.get(hypopituitary)
     psych = binary_map.get(psych)
-
-    # Replace 'M' and 'F' with binary 0 and 1
+    
     sex = 1 if sex == 'F' else 0 if sex == 'M' else None
 
-    return [age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
-            thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
-            goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI]
+    return [age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant, thyroid_surgery, 
+            I131_treatment, query_hypothyroid, query_hyperthyroid, lithium, goitre, tumor, hypopituitary, 
+            psych, TSH, T3, TT4, T4U, FTI]
 
 # Function to predict the diagnosis based on inputs
 def predict_diagnosis(inputs):
     output = model.predict([inputs])[0]
     return output
 
-# Function to analyze symptoms using NLP
-def analyze_symptoms(symptom_text):
-    # Example: simple keyword matching (can be replaced by a more sophisticated NLP model)
-    symptoms_map = {
-        'fatigue': 1,    # Hypothyroid
-        'weight gain': 1,  # Hypothyroid
-        'anxiety': 2,   # Hyperthyroid
-        'weight loss': 2,  # Hyperthyroid
-    }
+# Symptom analysis based on user input
+def analyze_symptoms(symptoms):
+    hypothyroid_symptoms = ['Fatigue', 'Weight Gain', 'Dry Skin', 'Cold Intolerance', 'Constipation']
+    hyperthyroid_symptoms = ['Weight Loss', 'Nervousness', 'Rapid Heartbeat', 'Sweating', 'Heat Intolerance']
+    
+    hypo_count = sum([1 for symptom in symptoms if symptom in hypothyroid_symptoms])
+    hyper_count = sum([1 for symptom in symptoms if symptom in hyperthyroid_symptoms])
 
-    detected_conditions = set()
-
-    # Basic symptom analysis by keyword matching
-    symptom_text_cleaned = re.sub(r'[^\w\s]', '', symptom_text.lower())
-    for symptom, condition in symptoms_map.items():
-        if symptom in symptom_text_cleaned:
-            detected_conditions.add(condition)
-
-    return detected_conditions
+    if hypo_count > hyper_count:
+        return "Based on the symptoms, the user might be at higher risk for **Hypothyroidism**."
+    elif hyper_count > hypo_count:
+        return "Based on the symptoms, the user might be at higher risk for **Hyperthyroidism**."
+    else:
+        return "The symptoms do not strongly indicate either Hypothyroidism or Hyperthyroidism."
 
 # Streamlit app
 def main():
-    # Title
-    st.markdown(title_css, unsafe_allow_html=True)
+    st.title("Thyroid Diagnosis Predictor with Symptom Analysis")
 
-    # Add custom CSS for background image
-    background_image = """
-    <style>
-        .stApp {
-            background-image: url('https://www.shutterstock.com/shutterstock/photos/2076134416/display_1500/stock-vector-endocrinologists-diagnose-and-treat-human-thyroid-gland-doctors-make-blood-test-on-hormones-2076134416.jpg');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-position: center;
-            color: black;  /* Change text color to black for better visibility */
-        }
-    </style>
-    """
-    st.markdown(background_image, unsafe_allow_html=True)
+    # Sidebar for user input
+    st.sidebar.title("Enter Patient Information")
 
-    # Sidebar
-    st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
-    st.sidebar.write("GitHub profile: (https://github.com/Shivam31817)")
-    st.sidebar.write("LinkedIn profile: (https://www.linkedin.com/in/shivam-yadav-135642231/)")
-    
-    st.sidebar.title("About Project :")
-    st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
+    # Symptom Input Section
+    st.sidebar.subheader("Symptom Analysis")
+    selected_symptoms = st.sidebar.multiselect(
+        "Select any symptoms you are experiencing",
+        ['Fatigue', 'Weight Gain', 'Dry Skin', 'Cold Intolerance', 'Constipation', 
+         'Weight Loss', 'Nervousness', 'Rapid Heartbeat', 'Sweating', 'Heat Intolerance']
+    )
 
-    # Symptom input field
-    symptom_text = st.text_area("Enter your symptoms (e.g., fatigue, anxiety, weight gain):")
+    # Analyze symptoms if any are selected
+    if selected_symptoms:
+        symptom_result = analyze_symptoms(selected_symptoms)
+        st.sidebar.write(symptom_result)
 
-    # Input fields for numeric data
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        age = st.number_input('Age', value=None)
-        query_on_thyroxine = st.selectbox('Query On Thyroxine', options=['', 'No', 'Yes'])
-        pregnant = st.selectbox('Pregnant', options=['', 'No', 'Yes'])
-        query_hypothyroid = st.selectbox('Query Hypothyroid', options=['', 'No', 'Yes'])
-        goitre = st.selectbox('Goitre', options=['', 'No', 'Yes'])
-        psych = st.selectbox('Psych', options=['', 'No', 'Yes'])
-        TT4 = st.number_input('TT4', value=None)
+    # Input fields with black colored labels
+    st.sidebar.markdown('<span style="color:black;">Age:</span>', unsafe_allow_html=True)
+    age = st.sidebar.number_input("", min_value=0, value=25)
 
-    with col2:
-        sex = st.selectbox('Sex', options=['', 'M', 'F'])
-        on_antithyroid_meds = st.selectbox('On Antithyroid Meds', options=['', 'No', 'Yes'])
-        thyroid_surgery = st.selectbox('Thyroid Surgery', options=['', 'No', 'Yes'])
-        query_hyperthyroid = st.selectbox('Query Hyperthyroid', options=['', 'No', 'Yes'])
-        tumor = st.selectbox('Tumor', options=['', 'No', 'Yes'])
-        TSH = st.number_input('TSH', value=None)
-        T4U = st.number_input('T4U', value=None)
+    st.sidebar.markdown('<span style="color:black;">Sex:</span>', unsafe_allow_html=True)
+    sex = st.sidebar.selectbox("", options=["", "M", "F"])
 
-    with col3:
-        on_thyroxine = st.selectbox('On Thyroxine', options=['', 'No', 'Yes'])
-        sick = st.selectbox('Sick', options=['', 'No', 'Yes'])
-        I131_treatment = st.selectbox('I131 Treatment', options=['', 'No', 'Yes'])
-        lithium = st.selectbox('Lithium', options=['', 'No', 'Yes'])
-        hypopituitary = st.selectbox('Hypopituitary', options=['', 'No', 'Yes'])
-        T3 = st.number_input('T3', value=None)
-        FTI = st.number_input('FTI', value=None)
+    st.sidebar.markdown('<span style="color:black;">On Thyroxine:</span>', unsafe_allow_html=True)
+    on_thyroxine = st.sidebar.selectbox("", options=["", "Yes", "No"])
 
-    # Detect button
-    with col2:
-        detect_button = st.button('Detect', key='predict_button')
-        if detect_button:
-            # Preprocess inputs
-            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
-                                       pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
-                                       lithium, goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
+    st.sidebar.markdown('<span style="color:black;">Query On Thyroxine:</span>', unsafe_allow_html=True)
+    query_on_thyroxine = st.sidebar.selectbox("", options=["", "Yes", "No"])
 
-            # Get prediction from ML model
-            diagnosis_num = predict_diagnosis(inputs)
-            diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
+    st.sidebar.markdown('<span style="color:black;">On Antithyroid Meds:</span>', unsafe_allow_html=True)
+    on_antithyroid_meds = st.sidebar.selectbox("", options=["", "Yes", "No"])
 
-            # Analyze symptoms using NLP
-            nlp_conditions = analyze_symptoms(symptom_text)
-            nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
+    st.sidebar.markdown('<span style="color:black;">Sick:</span>', unsafe_allow_html=True)
+    sick = st.sidebar.selectbox("", options=["", "Yes", "No"])
 
-            # Display diagnosis
-            st.markdown(f"<h1 style='text-align: center; color: {diagnosis_color};'>ML Diagnosis: {diagnosis_label}</h1>", unsafe_allow_html=True)
+    st.sidebar.markdown('<span style="color:black;">Pregnant:</span>', unsafe_allow_html=True)
+    pregnant = st.sidebar.selectbox("", options=["", "Yes", "No"])
 
-            if nlp_diagnosis:
-                st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
+    st.sidebar.markdown('<span style="color:black;">Thyroid Surgery:</span>', unsafe_allow_html=True)
+    thyroid_surgery = st.sidebar.selectbox("", options=["", "Yes", "No"])
 
+    st.sidebar.markdown('<span style="color:black;">I131 Treatment:</span>', unsafe_allow_html=True)
+    I131_treatment = st.sidebar.selectbox("", options=["", "Yes", "No"])
+
+    st.sidebar.markdown('<span style="color:black;">Query Hypothyroid:</span>', unsafe_allow_html=True)
+    query_hypothyroid = st.sidebar.selectbox("", options=["", "Yes", "No"])
+
+    st.sidebar.markdown('<span style="color:black;">Query Hyperthyroid:</span>', unsafe_allow_html=True)
+    query_hyperthyroid = st.sidebar.selectbox("", options=["", "Yes", "No"])
+
+    st.sidebar.markdown('<span style="color:black;">Lithium:</span>', unsafe_allow_html=True)
+    lithium = st.sidebar.selectbox("", options=["", "Yes", "No"])
+
+    st.sidebar.markdown('<span style="color:black;">Goitre:</span>', unsafe_allow_html=True)
+    goitre = st.sidebar.selectbox("", options=["", "Yes", "No"])
+
+    st.sidebar.markdown('<span style="color:black;">Tumor:</span>', unsafe_allow_html=True)
+    tumor = st.sidebar.selectbox("", options=["", "Yes", "No"])
+
+    st.sidebar.markdown('<span style="color:black;">Hypopituitary:</span>', unsafe_allow_html=True)
+    hypopituitary = st.sidebar.selectbox("", options=["", "Yes", "No"])
+
+    st.sidebar.markdown('<span style="color:black;">Psych:</span>', unsafe_allow_html=True)
+    psych = st.sidebar.selectbox("", options=["", "Yes", "No"])
+
+    st.sidebar.markdown('<span style="color:black;">TSH level:</span>', unsafe_allow_html=True)
+    TSH = st.sidebar.number_input("", value=1.0)
+
+    st.sidebar.markdown('<span style="color:black;">T3 level:</span>', unsafe_allow_html=True)
+    T3 = st.sidebar.number_input("", value=1.0)
+
+    st.sidebar.markdown('<span style="color:black;">TT4 level:</span>', unsafe_allow_html=True)
+    TT4 = st.sidebar.number_input("", value=1.0)
+
+    st.sidebar.markdown('<span style="color:black;">T4U level:</span>', unsafe_allow_html=True)
+    T4U = st.sidebar.number_input("", value=1.0)
+
+    st.sidebar.markdown('<span style="color:black;">FTI level:</span>', unsafe_allow_html=True)
+    FTI = st.sidebar.number_input("", value=1.0)
+
+    # Predict button
+    if st.sidebar.button("Detect"):
+        inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
+                                   thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
+                                   goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
+
+        # Predict the diagnosis
+        diagnosis_num = predict_diagnosis(inputs)
+        diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
+
+        # Display diagnosis
+        st.write(f"### ML Diagnosis: {diagnosis_label}")
 
 if __name__ == '__main__':
     main()
+
 
 
 
