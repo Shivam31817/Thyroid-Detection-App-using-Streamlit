@@ -4,10 +4,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 import re
 import numpy as np
-import subprocess
-import sys
-import requests
-import matplotlib.pyplot as plt
 
 # Load the trained model
 with open('model.pkl', 'rb') as f:
@@ -29,6 +25,7 @@ title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diag
 def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
                       thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
                       goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI):
+
     # Replace 'Yes' with 1 and 'No' with 0
     binary_map = {'Yes': 1, 'No': 0, '': None}
     on_thyroxine = binary_map.get(on_thyroxine)
@@ -84,18 +81,6 @@ def analyze_symptoms(symptom_text):
 
     return detected_conditions
 
-# Function to install a library
-def install_library(library_name):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", library_name])
-
-# Function to fetch live data (Example: Reference ranges for TSH)
-def fetch_live_data():
-    try:
-        response = requests.get("https://api.example.com/hormone_levels")  # Replace with a valid API endpoint
-        return response.json()  # Assuming the response is JSON
-    except Exception as e:
-        return str(e)
-
 # Streamlit app
 def main():
     # Title
@@ -131,23 +116,6 @@ def main():
     st.sidebar.title("About Project :")
     st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
 
-    # Library Installation Section
-    st.sidebar.title("Install New Libraries:")
-    library_name = st.sidebar.text_input("Library Name")
-    if st.sidebar.button("Install"):
-        if library_name:
-            install_library(library_name)
-            st.sidebar.success(f"Library '{library_name}' has been installed!")
-
-    # Fetch Live Data Section
-    if st.sidebar.button("Fetch Live Data"):
-        live_data = fetch_live_data()
-        if isinstance(live_data, dict):
-            st.sidebar.write("Live Data Fetched:")
-            st.sidebar.json(live_data)
-        else:
-            st.sidebar.error(f"Error fetching data: {live_data}")
-
     # Symptom input field
     symptom_text = st.text_area("Enter your symptoms (e.g., fatigue, anxiety, weight gain):", 
                                  help="Please list your symptoms separated by commas.")
@@ -173,15 +141,16 @@ def main():
                                         help="Have you had thyroid surgery?")
         query_hyperthyroid = st.selectbox('Query Hyperthyroid', options=['', 'No', 'Yes'], 
                                            help="Is there a query about hyperthyroidism?")
-        tumor = st.selectbox('Tumor', options=['', 'No', 'Yes'], help="Do you have a tumor?")
+        tumor = st.selectbox('Tumor', options=['', 'No', 'Yes'], help="Do you have any tumors?")
         TSH = st.number_input('TSH', value=None, help="Enter your TSH level.")
         T4U = st.number_input('T4U', value=None, help="Enter your T4U level.")
 
     with col3:
-        on_thyroxine = st.selectbox('On Thyroxine', options=['', 'No', 'Yes'], help="Are you on thyroxine?")
+        on_thyroxine = st.selectbox('On Thyroxine', options=['', 'No', 'Yes'], 
+                                     help="Are you currently on thyroxine?")
         sick = st.selectbox('Sick', options=['', 'No', 'Yes'], help="Are you currently sick?")
         I131_treatment = st.selectbox('I131 Treatment', options=['', 'No', 'Yes'], 
-                                       help="Have you received I131 treatment?")
+                                       help="Have you undergone I131 treatment?")
         lithium = st.selectbox('Lithium', options=['', 'No', 'Yes'], help="Are you taking lithium?")
         hypopituitary = st.selectbox('Hypopituitary', options=['', 'No', 'Yes'], 
                                       help="Do you have hypopituitarism?")
@@ -192,7 +161,7 @@ def main():
     with col2:
         detect_button = st.button('Detect', key='predict_button')
         clear_button = st.button('Clear', key='clear_button')
-
+        
         if detect_button:
             # Show spinner while predicting
             with st.spinner("Making predictions..."):
@@ -227,4 +196,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
