@@ -194,6 +194,4 @@ def main():
             # Clear all input fields
             st.experimental_rerun()  # Rerun the script to reset all inputs
 
-if __name__ == '__main__':
-
-
+if __name__ == '__main__'
