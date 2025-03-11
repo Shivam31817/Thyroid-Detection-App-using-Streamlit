@@ -213,7 +213,7 @@ def main():
 
             # Ensure inputs are valid before making a prediction
             if None in inputs:
-                st.error("Please fill all required fields before making a prediction.")
+                st.error("⚠️ Please fill all required fields before making a prediction.")
             else:
                 diagnosis_num = predict_diagnosis(inputs)
                 diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
@@ -233,7 +233,7 @@ def main():
                                 "</div>", unsafe_allow_html=True)
 
                 # Display prevention tips
-                st.subheader("Prevention Tips")
+                st.subheader("🩺 Prevention Tips")
 
                 if diagnosis_num == 1 or (1 in nlp_conditions):
                     st.markdown("""
@@ -257,7 +257,8 @@ def main():
                     st.markdown("✅ No thyroid issues detected. Keep maintaining a healthy lifestyle!")
 
         except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+            st.error(f"❌ An error occurred: {str(e)}")
+
 
        
         if clear_button:
