@@ -107,6 +107,8 @@ def main():
     st.sidebar.write("1. About")
     st.sidebar.write("2. Instructions")
     st.sidebar.write("3. Contact")
+    st.sidebar.title("About Project :")
+    st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
     st.sidebar.write("""
         The **thyroid gland** produces hormones that regulate metabolism, energy, and overall body function.
         
@@ -153,8 +155,6 @@ def main():
     st.sidebar.write("GitHub: [Shivam31817](https://github.com/Shivam31817)")
     st.sidebar.write("LinkedIn: [Shivam Yadav](https://www.linkedin.com/in/shivam-yadav-135642231/)")
     
-    st.sidebar.title("About Project :")
-    st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
 
     # Symptom input field
     symptom_text = st.text_area("Enter your symptoms (e.g., fatigue, anxiety, weight gain):", 
