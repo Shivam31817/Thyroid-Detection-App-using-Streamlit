@@ -258,7 +258,7 @@ def main():
         - 🩺 **Regular Checkups:** Monitor thyroid levels with routine blood tests.  
         """)
 
-            else:
+        else:
                 st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
 
         if clear_button:
