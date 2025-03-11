@@ -4,10 +4,18 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 import re
 import numpy as np
+import pytesseract
+from pdf2image import convert_from_path
+import fitz  # PyMuPDF for PDF text extraction
+import googlemaps
+from PIL import Image
+import os
 
 # Load the trained model
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
+
+gmaps = googlemaps.Client(key="YOUR_GOOGLE_MAPS_API_KEY")  # Replace with your API key
 
 # Define diagnosis mapping dictionary
 diagnoses = {
@@ -25,8 +33,6 @@ title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diag
 def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
                       thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
                       goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI):
-
-    # Replace 'Yes' with 1 and 'No' with 0
     binary_map = {'Yes': 1, 'No': 0, '': None}
     on_thyroxine = binary_map.get(on_thyroxine)
     query_on_thyroxine = binary_map.get(query_on_thyroxine)
@@ -42,8 +48,6 @@ def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid
     tumor = binary_map.get(tumor)
     hypopituitary = binary_map.get(hypopituitary)
     psych = binary_map.get(psych)
-
-    # Replace 'M' and 'F' with binary 0 and 1
     sex = 1 if sex == 'F' else 0 if sex == 'M' else None
 
     return [age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
@@ -57,192 +61,90 @@ def predict_diagnosis(inputs):
 
 # Function to analyze symptoms using NLP
 def analyze_symptoms(symptom_text):
-    # Expanded symptom mapping
     symptoms_map = {
-        'fatigue': 1,  # Hypothyroid
-        'weight gain': 1,  # Hypothyroid
-        'dry skin': 1,  # Hypothyroid
-        'cold intolerance': 1,  # Hypothyroid
-        'constipation': 1,  # Hypothyroid
-        'weight loss': 2,  # Hyperthyroid
-        'nervousness': 2,  # Hyperthyroid
-        'rapid heartbeat': 2,  # Hyperthyroid
-        'sweating': 2,  # Hyperthyroid
-        'heat intolerance': 2,  # Hyperthyroid
+        'fatigue': 1, 'weight gain': 1, 'dry skin': 1, 'cold intolerance': 1, 'constipation': 1,
+        'weight loss': 2, 'nervousness': 2, 'rapid heartbeat': 2, 'sweating': 2, 'heat intolerance': 2,
     }
-
     detected_conditions = set()
-
-    # Basic symptom analysis by keyword matching
     symptom_text_cleaned = re.sub(r'[^\w\s]', '', symptom_text.lower())
     for symptom, condition in symptoms_map.items():
         if symptom in symptom_text_cleaned:
             detected_conditions.add(condition)
-
     return detected_conditions
+
+# Function to extract text from image
+def extract_text_from_image(image):
+    text = pytesseract.image_to_string(image)
+    return text
+
+# Function to extract text from PDF
+def extract_text_from_pdf(pdf_path):
+    text = ""
+    doc = fitz.open(pdf_path)
+    for page in doc:
+        text += page.get_text("text")
+    return text
+
+# Function to auto-fill lab values
+def autofill_lab_values(text):
+    values = {}
+    keywords = {"TSH": "TSH", "T3": "T3", "TT4": "TT4", "T4U": "T4U", "FTI": "FTI"}
+    
+    for key, label in keywords.items():
+        for line in text.split("\n"):
+            if label in line:
+                parts = line.split()
+                for part in parts:
+                    try:
+                        values[key] = float(part)
+                        break
+                    except ValueError:
+                        continue
+    return values
+
+# Function to find nearby doctors
+def find_nearby_doctors(location):
+    places = gmaps.places_nearby(location=location, radius=5000, type="doctor", keyword="endocrinologist")
+    return places.get("results", [])
 
 # Streamlit app
 def main():
-    # Title
     st.markdown(title_css, unsafe_allow_html=True)
 
-    # Add custom CSS for background image
-    background_image = """
-    <style>
-        .stApp {
-            background-image: url('https://www.shutterstock.com/shutterstock/photos/2076134416/display_1500/stock-vector-endocrinologists-diagnose-and-treat-human-thyroid-gland-doctors-make-blood-test-on-hormones-2076134416.jpg');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-position: center;
-            color: black;  /* Change text color to black for better visibility */
-        }
-    </style>
-    """
-    st.markdown(background_image, unsafe_allow_html=True)
-
-    # Sidebar for navigation
-    st.sidebar.title("Navigation")
-    st.sidebar.markdown("<h3 style='color: #F63366;'>Sections</h3>", unsafe_allow_html=True)
-    st.sidebar.write("1. About")
-    st.sidebar.write("2. Instructions")
-    st.sidebar.write("3. Contact")
-    st.sidebar.title("About Project :")
-    st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
-    st.sidebar.write("""
-        The **thyroid gland** produces hormones that regulate metabolism, energy, and overall body function.
+    uploaded_file = st.file_uploader("Upload Lab Report (PDF or Image)", type=["pdf", "png", "jpg", "jpeg"])
+    if uploaded_file:
+        file_extension = uploaded_file.name.split(".")[-1].lower()
+        extracted_text = ""
         
-        There are **two primary disorders**:
+        if file_extension in ["png", "jpg", "jpeg"]:
+            image = Image.open(uploaded_file)
+            extracted_text = extract_text_from_image(image)
+        elif file_extension == "pdf":
+            pdf_path = f"temp_{uploaded_file.name}"
+            with open(pdf_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            extracted_text = extract_text_from_pdf(pdf_path)
+            os.remove(pdf_path)
         
-        **1. Hypothyroidism (Underactive Thyroid)**
-        - Symptoms: Fatigue, weight gain, dry skin, cold intolerance, constipation.
-        - Common Causes: Hashimoto's disease, iodine deficiency.
-        
-        **2. Hyperthyroidism (Overactive Thyroid)**
-        - Symptoms: Weight loss, anxiety, sweating, heat intolerance, rapid heartbeat.
-        - Common Causes: Graves' disease, thyroid nodules.
-
-        **Thyroid Function Test Ranges:**
-        
-        - **TSH (Thyroid Stimulating Hormone)**
-          - Normal: **0.4 - 4.0 μIU/mL**
-          - High: **Hypothyroidism**
-          - Low: **Hyperthyroidism**
-        
-        - **T3 (Triiodothyronine)**
-          - Normal: **0.8 - 2.0 ng/mL**
-          - Low: **Hypothyroidism**
-          - High: **Hyperthyroidism**
-        
-        - **TT4 (Total Thyroxine)**
-          - Normal: **5.0 - 12.0 μg/dL**
-          - Low: **Hypothyroidism**
-          - High: **Hyperthyroidism**
-        
-        - **T4U (Thyroxine Uptake)**
-          - Normal: **0.6 - 1.8**
-        
-        - **FTI (Free Thyroxine Index)**
-          - Normal: **6.0 - 12.0**
-          - Low: **Hypothyroidism**
-          - High: **Hyperthyroidism**
-
-        These tests help doctors determine the exact thyroid condition.
-    """)
-
-    # Sidebar info
-    st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
-    st.sidebar.write("GitHub: [Shivam31817](https://github.com/Shivam31817)")
-    st.sidebar.write("LinkedIn: [Shivam Yadav](https://www.linkedin.com/in/shivam-yadav-135642231/)")
-    
-
-    # Symptom input field
-    symptom_text = st.text_area("Enter your symptoms (e.g., fatigue, anxiety, weight gain):", 
-                                 help="Please list your symptoms separated by commas.")
-
-    # Input fields for numeric data
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        age = st.number_input('Age', value=None, help="Enter your age.")
-        query_on_thyroxine = st.selectbox('Query On Thyroxine', options=['', 'No', 'Yes'], 
-                                            help="Is there a query about thyroxine?")
-        pregnant = st.selectbox('Pregnant', options=['', 'No', 'Yes'], help="Are you pregnant?")
-        query_hypothyroid = st.selectbox('Query Hypothyroid', options=['', 'No', 'Yes'], 
-                                          help="Is there a query about hypothyroidism?")
-        goitre = st.selectbox('Goitre', options=['', 'No', 'Yes'], help="Do you have goitre?")
-        psych = st.selectbox('Psych', options=['', 'No', 'Yes'], help="Do you have a psychological condition?")
-        TT4 = st.number_input('TT4', value=None, help="Enter your TT4 level.")
-
-    with col2:
-        sex = st.selectbox('Sex', options=['', 'M', 'F'], help="Select your gender.")
-        on_antithyroid_meds = st.selectbox('On Antithyroid Meds', options=['', 'No', 'Yes'], 
-                                            help="Are you on antithyroid medications?")
-        thyroid_surgery = st.selectbox('Thyroid Surgery', options=['', 'No', 'Yes'], 
-                                        help="Have you had thyroid surgery?")
-        query_hyperthyroid = st.selectbox('Query Hyperthyroid', options=['', 'No', 'Yes'], 
-                                           help="Is there a query about hyperthyroidism?")
-        tumor = st.selectbox('Tumor', options=['', 'No', 'Yes'], help="Do you have any tumors?")
-        TSH = st.number_input('TSH', value=None, help="Enter your TSH level.")
-        T4U = st.number_input('T4U', value=None, help="Enter your T4U level.")
-
-    with col3:
-        on_thyroxine = st.selectbox('On Thyroxine', options=['', 'No', 'Yes'], 
-                                     help="Are you currently on thyroxine?")
-        sick = st.selectbox('Sick', options=['', 'No', 'Yes'], help="Are you currently sick?")
-        I131_treatment = st.selectbox('I131 Treatment', options=['', 'No', 'Yes'], 
-                                       help="Have you undergone I131 treatment?")
-        lithium = st.selectbox('Lithium', options=['', 'No', 'Yes'], help="Are you taking lithium?")
-        hypopituitary = st.selectbox('Hypopituitary', options=['', 'No', 'Yes'], 
-                                      help="Do you have hypopituitarism?")
-        T3 = st.number_input('T3', value=None, help="Enter your T3 level.")
-        FTI = st.number_input('FTI', value=None, help="Enter your FTI level.")
-
-    # Detect button
-    with col2:
-        detect_button = st.button('Detect', key='predict_button')
-        clear_button = st.button('Clear', key='clear_button')
-        
-    if detect_button:
-        with st.spinner("Making predictions..."):
-            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
-                                   pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
-                                   lithium, goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
-
-        # Get prediction from ML model
-        diagnosis_num = predict_diagnosis(inputs)
-        diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
-
-        # Analyze symptoms using NLP
-        nlp_conditions = analyze_symptoms(symptom_text)
-        nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
-
-        # Conflict resolution: Check if NLP and ML contradict each other
-        if (1 in nlp_conditions and diagnosis_num == 2) or (2 in nlp_conditions and diagnosis_num == 1):
-            st.markdown(
-                f"<div style='background-color: orange; padding: 15px; border-radius: 10px;'>"
-                f"<h2 style='text-align: center; color: white;'>⚠️ Conflict Detected!</h2>"
-                f"<p style='text-align: center; color: white;'>ML Diagnosis: <b>{diagnosis_label}</b></p>"
-                f"<p style='text-align: center; color: white;'>NLP Suggested Diagnosis: <b>{nlp_diagnosis}</b></p>"
-                f"<p style='text-align: center; color: white;'>The system detected conflicting results. Please consult a doctor for confirmation.</p>"
-                "</div>", unsafe_allow_html=True
-            )
+        lab_values = autofill_lab_values(extracted_text)
+        if lab_values:
+            st.success("Extracted Lab Values:")
+            for key, value in lab_values.items():
+                st.write(f"{key}: {value}")
         else:
-            # Display diagnosis normally if no conflict
-            st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                        f"<h1 style='text-align: center; color: white;'>ML Diagnosis: {diagnosis_label}</h1>"
-                        "</div>", unsafe_allow_html=True)
+            st.warning("Could not detect lab values automatically.")
 
-            if nlp_diagnosis:
-                st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                            f"<h2 style='text-align: center; color: white;'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>"
-                            "</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
-
-        if clear_button:
-            # Clear all input fields
-            st.experimental_rerun()  # Rerun the script to reset all inputs
+    if st.button("Find an Endocrinologist Near Me"):
+        location = "Your City, Your Country"  # Replace with dynamic user location if possible
+        doctors = find_nearby_doctors(location)
+        if doctors:
+            st.success("Nearby Endocrinologists:")
+            for doc in doctors[:5]:
+                st.write(f"- **{doc['name']}**\n  Address: {doc['vicinity']}")
+        else:
+            st.error("No endocrinologists found nearby.")
 
 if __name__ == '__main__':
     main()
+
 
