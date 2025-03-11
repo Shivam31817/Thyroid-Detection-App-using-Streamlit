@@ -407,7 +407,7 @@ def main():
         clear_button = st.button('Clear', key='clear_button')
         
    if detect_button:
-    with st.spinner("Making predictions..."):
+       with st.spinner("Making predictions..."):
         inputs = preprocess_inputs(age, sex, '', '', '', '', '', '', '', '', '', '', '', '', '', '', TSH, T3, TT4, T4U, FTI)
 
     # Get prediction from ML model
