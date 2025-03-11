@@ -202,8 +202,8 @@ def main():
         detect_button = st.button('Detect', key='predict_button')
         clear_button = st.button('Clear', key='clear_button')
         
-       if detect_button:
-    with st.spinner("Making predictions..."):
+    if detect_button:
+        with st.spinner("Making predictions..."):
         # Preprocess inputs
         inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
                                    pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
