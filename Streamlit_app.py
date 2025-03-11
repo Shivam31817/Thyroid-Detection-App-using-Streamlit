@@ -202,33 +202,43 @@ def main():
         detect_button = st.button('Detect', key='predict_button')
         clear_button = st.button('Clear', key='clear_button')
         
-        if detect_button:
-            # Show spinner while predicting
-            with st.spinner("Making predictions..."):
-                # Preprocess inputs
-                inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
-                                           pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
-                                           lithium, goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
+       if detect_button:
+    with st.spinner("Making predictions..."):
+        # Preprocess inputs
+        inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
+                                   pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
+                                   lithium, goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
 
-                # Get prediction from ML model
-                diagnosis_num = predict_diagnosis(inputs)
-                diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
+        # Get prediction from ML model
+        diagnosis_num = predict_diagnosis(inputs)
+        diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
 
-                # Analyze symptoms using NLP
-                nlp_conditions = analyze_symptoms(symptom_text)
-                nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
+        # Analyze symptoms using NLP
+        nlp_conditions = analyze_symptoms(symptom_text)
+        nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
 
-                # Display diagnosis
+        # Conflict resolution: Check if NLP and ML contradict each other
+        if (1 in nlp_conditions and diagnosis_num == 2) or (2 in nlp_conditions and diagnosis_num == 1):
+            st.markdown(
+                f"<div style='background-color: orange; padding: 15px; border-radius: 10px;'>"
+                f"<h2 style='text-align: center; color: white;'>⚠️ Conflict Detected!</h2>"
+                f"<p style='text-align: center; color: white;'>ML Diagnosis: <b>{diagnosis_label}</b></p>"
+                f"<p style='text-align: center; color: white;'>NLP Suggested Diagnosis: <b>{nlp_diagnosis}</b></p>"
+                f"<p style='text-align: center; color: white;'>The system detected conflicting results. Please consult a doctor for confirmation.</p>"
+                "</div>", unsafe_allow_html=True
+            )
+        else:
+            # Display diagnosis normally if no conflict
+            st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
+                        f"<h1 style='text-align: center; color: white;'>ML Diagnosis: {diagnosis_label}</h1>"
+                        "</div>", unsafe_allow_html=True)
+
+            if nlp_diagnosis:
                 st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                            f"<h1 style='text-align: center; color: white;'>ML Diagnosis: {diagnosis_label}</h1>"
+                            f"<h2 style='text-align: center; color: white;'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>"
                             "</div>", unsafe_allow_html=True)
-
-                if nlp_diagnosis:
-                    st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                                f"<h2 style='text-align: center; color: white;'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>"
-                                "</div>", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
 
         if clear_button:
             # Clear all input fields
