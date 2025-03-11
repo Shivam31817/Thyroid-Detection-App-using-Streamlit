@@ -110,42 +110,42 @@ def main():
     st.sidebar.title("About Project :")
     st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
     st.sidebar.write("""
-        The **thyroid gland** produces hormones that regulate metabolism, energy, and overall body function.
+        The *thyroid gland* produces hormones that regulate metabolism, energy, and overall body function.
         
-        There are **two primary disorders**:
+        There are *two primary disorders*:
         
-        **1. Hypothyroidism (Underactive Thyroid)**
+        *1. Hypothyroidism (Underactive Thyroid)*
         - Symptoms: Fatigue, weight gain, dry skin, cold intolerance, constipation.
         - Common Causes: Hashimoto's disease, iodine deficiency.
         
-        **2. Hyperthyroidism (Overactive Thyroid)**
+        *2. Hyperthyroidism (Overactive Thyroid)*
         - Symptoms: Weight loss, anxiety, sweating, heat intolerance, rapid heartbeat.
         - Common Causes: Graves' disease, thyroid nodules.
 
-        **Thyroid Function Test Ranges:**
+        *Thyroid Function Test Ranges:*
         
-        - **TSH (Thyroid Stimulating Hormone)**
-          - Normal: **0.4 - 4.0 μIU/mL**
-          - High: **Hypothyroidism**
-          - Low: **Hyperthyroidism**
+        - *TSH (Thyroid Stimulating Hormone)*
+          - Normal: *0.4 - 4.0 μIU/mL*
+          - High: *Hypothyroidism*
+          - Low: *Hyperthyroidism*
         
-        - **T3 (Triiodothyronine)**
-          - Normal: **0.8 - 2.0 ng/mL**
-          - Low: **Hypothyroidism**
-          - High: **Hyperthyroidism**
+        - *T3 (Triiodothyronine)*
+          - Normal: *0.8 - 2.0 ng/mL*
+          - Low: *Hypothyroidism*
+          - High: *Hyperthyroidism*
         
-        - **TT4 (Total Thyroxine)**
-          - Normal: **5.0 - 12.0 μg/dL**
-          - Low: **Hypothyroidism**
-          - High: **Hyperthyroidism**
+        - *TT4 (Total Thyroxine)*
+          - Normal: *5.0 - 12.0 μg/dL*
+          - Low: *Hypothyroidism*
+          - High: *Hyperthyroidism*
         
-        - **T4U (Thyroxine Uptake)**
-          - Normal: **0.6 - 1.8**
+        - *T4U (Thyroxine Uptake)*
+          - Normal: *0.6 - 1.8*
         
-        - **FTI (Free Thyroxine Index)**
-          - Normal: **6.0 - 12.0**
-          - Low: **Hypothyroidism**
-          - High: **Hyperthyroidism**
+        - *FTI (Free Thyroxine Index)*
+          - Normal: *6.0 - 12.0*
+          - Low: *Hypothyroidism*
+          - High: *Hyperthyroidism*
 
         These tests help doctors determine the exact thyroid condition.
     """)
@@ -204,66 +204,44 @@ def main():
         
     if detect_button:
         with st.spinner("Making predictions..."):
-            try:
-                inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, 
-                                       on_antithyroid_meds, sick, pregnant, thyroid_surgery, 
-                                       I131_treatment, query_hypothyroid, query_hyperthyroid, 
-                                       lithium, goitre, tumor, hypopituitary, psych, 
-                                       TSH, T3, TT4, T4U, FTI)
+            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
+                                   pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
+                                   lithium, goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
 
-            # Ensure inputs are valid before making a prediction
-            if None in inputs:
-                st.error("⚠️ Please fill all required fields before making a prediction.")
-            else:
-                diagnosis_num = predict_diagnosis(inputs)
-                diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
+        # Get prediction from ML model
+        diagnosis_num = predict_diagnosis(inputs)
+        diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
 
-                # Analyze symptoms using NLP
-                nlp_conditions = analyze_symptoms(symptom_text)
-                nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
+        # Analyze symptoms using NLP
+        nlp_conditions = analyze_symptoms(symptom_text)
+        nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
 
-                # Display ML Diagnosis
+        # Conflict resolution: Check if NLP and ML contradict each other
+        if (1 in nlp_conditions and diagnosis_num == 2) or (2 in nlp_conditions and diagnosis_num == 1):
+            st.markdown(
+                f"<div style='background-color: orange; padding: 15px; border-radius: 10px;'>"
+                f"<h2 style='text-align: center; color: white;'>⚠️ Conflict Detected!</h2>"
+                f"<p style='text-align: center; color: white;'>ML Diagnosis: <b>{diagnosis_label}</b></p>"
+                f"<p style='text-align: center; color: white;'>NLP Suggested Diagnosis: <b>{nlp_diagnosis}</b></p>"
+                f"<p style='text-align: center; color: white;'>The system detected conflicting results. Please consult a doctor for confirmation.</p>"
+                "</div>", unsafe_allow_html=True
+            )
+        else:
+            # Display diagnosis normally if no conflict
+            st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
+                        f"<h1 style='text-align: center; color: white;'>ML Diagnosis: {diagnosis_label}</h1>"
+                        "</div>", unsafe_allow_html=True)
+
+            if nlp_diagnosis:
                 st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                            f"<h1 style='text-align: center; color: white;'>ML Diagnosis: {diagnosis_label}</h1>"
+                            f"<h2 style='text-align: center; color: white;'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>"
                             "</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
 
-                if nlp_diagnosis:
-                    st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                                f"<h2 style='text-align: center; color: white;'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>"
-                                "</div>", unsafe_allow_html=True)
-
-                # Display prevention tips
-                st.subheader("🩺 Prevention Tips")
-
-                if diagnosis_num == 1 or (1 in nlp_conditions):
-                    st.markdown("""
-                    ### **For Hypothyroidism:**  
-                    - 🥦 **Eat a Balanced Diet:** Include iodine-rich foods (iodized salt, fish, dairy).  
-                    - 💊 **Monitor Selenium Intake:** Brazil nuts, tuna, and sunflower seeds help thyroid function.  
-                    - 🚫 **Limit Goitrogenic Foods:** Too much raw cabbage, soy, and cauliflower can interfere with thyroid hormones.  
-                    - 😌 **Manage Stress:** Practice mindfulness, yoga, or meditation.  
-                    """)
-
-                if diagnosis_num == 2 or (2 in nlp_conditions):
-                    st.markdown("""
-                    ### **For Hyperthyroidism:**  
-                    - 🍽️ **Control Iodine Intake:** Avoid excess iodine from seaweed, supplements, or certain medications.  
-                    - 🏃 **Stay Active:** Regular exercise supports metabolism and reduces stress.  
-                    - 🚭 **Avoid Smoking:** Cigarettes contain toxins that may worsen thyroid function.  
-                    - 🩺 **Regular Checkups:** Monitor thyroid levels with routine blood tests.  
-                    """)
-
-                if diagnosis_num == 0 and not nlp_conditions:
-                    st.markdown("✅ No thyroid issues detected. Keep maintaining a healthy lifestyle!")
-
-        except Exception as e:
-            st.error(f"❌ An error occurred: {str(e)}")
-
-
-       
         if clear_button:
             # Clear all input fields
             st.experimental_rerun()  # Rerun the script to reset all inputs
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     main()
