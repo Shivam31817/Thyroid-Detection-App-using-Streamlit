@@ -237,6 +237,9 @@ def main():
                             f"<h2 style='text-align: center; color: white;'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>"
                             "</div>", unsafe_allow_html=True)
                 # Display prevention tips
+                 else:
+                        st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
+
     
     st.subheader("Prevention Tips")
 
@@ -258,9 +261,7 @@ def main():
         - 🩺 **Regular Checkups:** Monitor thyroid levels with routine blood tests.  
         """)
 
-        else:
-                st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
-
+       
         if clear_button:
             # Clear all input fields
             st.experimental_rerun()  # Rerun the script to reset all inputs
