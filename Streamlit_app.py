@@ -202,7 +202,7 @@ def main():
         detect_button = st.button('Detect', key='predict_button')
         clear_button = st.button('Clear', key='clear_button')
         
-  import streamlit as st
+import streamlit as st
 import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
