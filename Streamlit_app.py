@@ -57,21 +57,23 @@ def predict_diagnosis(inputs):
 
 # Function to analyze symptoms using NLP
 def analyze_symptoms(symptom_text):
+    # Expanded symptom mapping
     symptoms_map = {
-        'fatigue': 1,  
-        'weight gain': 1,  
-        'dry skin': 1,  
-        'cold intolerance': 1,  
-        'constipation': 1,  
-        'weight loss': 2,  
-        'nervousness': 2,  
-        'rapid heartbeat': 2,  
-        'sweating': 2,  
-        'heat intolerance': 2,  
+        'fatigue': 1,  # Hypothyroid
+        'weight gain': 1,  # Hypothyroid
+        'dry skin': 1,  # Hypothyroid
+        'cold intolerance': 1,  # Hypothyroid
+        'constipation': 1,  # Hypothyroid
+        'weight loss': 2,  # Hyperthyroid
+        'nervousness': 2,  # Hyperthyroid
+        'rapid heartbeat': 2,  # Hyperthyroid
+        'sweating': 2,  # Hyperthyroid
+        'heat intolerance': 2,  # Hyperthyroid
     }
 
     detected_conditions = set()
 
+    # Basic symptom analysis by keyword matching
     symptom_text_cleaned = re.sub(r'[^\w\s]', '', symptom_text.lower())
     for symptom, condition in symptoms_map.items():
         if symptom in symptom_text_cleaned:
@@ -91,48 +93,60 @@ def main():
     st.sidebar.write("2. Instructions")
     st.sidebar.write("3. Contact")
 
-    # Sidebar info
+    # **About Section with Thyroid Disorder Details**
+    st.sidebar.title("About Thyroid Disorders")
+    st.sidebar.write("""
+        The **thyroid gland** produces hormones that regulate metabolism, energy, and overall body function.
+        
+        There are **two primary disorders**:
+        
+        **1. Hypothyroidism (Underactive Thyroid)**
+        - Symptoms: Fatigue, weight gain, dry skin, cold intolerance, constipation.
+        - Common Causes: Hashimoto's disease, iodine deficiency.
+        
+        **2. Hyperthyroidism (Overactive Thyroid)**
+        - Symptoms: Weight loss, anxiety, sweating, heat intolerance, rapid heartbeat.
+        - Common Causes: Graves' disease, thyroid nodules.
+
+        **Thyroid Function Test Ranges:**
+        
+        - **TSH (Thyroid Stimulating Hormone)**
+          - Normal: **0.4 - 4.0 μIU/mL**
+          - High: **Hypothyroidism**
+          - Low: **Hyperthyroidism**
+        
+        - **T3 (Triiodothyronine)**
+          - Normal: **0.8 - 2.0 ng/mL**
+          - Low: **Hypothyroidism**
+          - High: **Hyperthyroidism**
+        
+        - **TT4 (Total Thyroxine)**
+          - Normal: **5.0 - 12.0 μg/dL**
+          - Low: **Hypothyroidism**
+          - High: **Hyperthyroidism**
+        
+        - **T4U (Thyroxine Uptake)**
+          - Normal: **0.6 - 1.8**
+        
+        - **FTI (Free Thyroxine Index)**
+          - Normal: **6.0 - 12.0**
+          - Low: **Hypothyroidism**
+          - High: **Hyperthyroidism**
+
+        These tests help doctors determine the exact thyroid condition.
+    """)
+
+    # Sidebar Contact Info
+    st.sidebar.title("Contact Developer")
     st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
     st.sidebar.write("GitHub: [Shivam31817](https://github.com/Shivam31817)")
     st.sidebar.write("LinkedIn: [Shivam Yadav](https://www.linkedin.com/in/shivam-yadav-135642231/)")
-
-    # About section with detailed theory
-    st.sidebar.title("About the Project:")
-    st.sidebar.write("This Streamlit app serves as a **Thyroid Diagnosis Predictor** using machine learning and NLP-based symptom analysis.")
-    
-    st.sidebar.subheader("Thyroid Function Overview:")
-    st.sidebar.write("The thyroid gland regulates metabolism by releasing hormones: **T3 (Triiodothyronine)** and **T4 (Thyroxine)**. "
-                     "Thyroid disorders can cause excessive (Hyperthyroidism) or insufficient (Hypothyroidism) hormone production.")
-
-    st.sidebar.subheader("Thyroid Disorder Parameter Ranges:")
-    st.sidebar.write("""
-    **1. Normal Thyroid Function (Euthyroid):**  
-    - TSH: 0.4 - 4.0 μIU/mL  
-    - T3: 0.8 - 2.0 ng/mL  
-    - TT4: 5.0 - 12.0 μg/dL  
-    - T4U: 0.6 - 1.8  
-    - FTI: 6.0 - 12.0  
-
-    **2. Hypothyroidism (Underactive Thyroid):**  
-    - TSH: **>4.5 μIU/mL (High)**  
-    - T3: **<0.8 ng/mL (Low or Normal)**  
-    - TT4: **<5.0 μg/dL (Low)**  
-    - FTI: **<6.0 (Low)**  
-    - Symptoms: Fatigue, weight gain, dry skin, constipation, cold intolerance.  
-
-    **3. Hyperthyroidism (Overactive Thyroid):**  
-    - TSH: **<0.3 μIU/mL (Low)**  
-    - T3: **>2.0 ng/mL (High)**  
-    - TT4: **>12.0 μg/dL (High)**  
-    - FTI: **>12.0 (High)**  
-    - Symptoms: Weight loss, anxiety, rapid heartbeat, sweating, heat intolerance.  
-    """)
 
     # Symptom input field
     symptom_text = st.text_area("Enter your symptoms (e.g., fatigue, anxiety, weight gain):", 
                                  help="Please list your symptoms separated by commas.")
 
-    # Input fields for numeric data
+    # Input fields (No structure changes, keeping as is)
     col1, col2, col3 = st.columns(3)
     with col1:
         age = st.number_input('Age', value=None)
@@ -144,15 +158,13 @@ def main():
         TT4 = st.number_input('TT4', value=None)
         FTI = st.number_input('FTI', value=None)
 
-    # Detect button
-    detect_button = st.button('Detect', key='predict_button')
-    
+    # Predict button
+    detect_button = st.button('Detect')
     if detect_button:
-        with st.spinner("Making predictions..."):
-            inputs = preprocess_inputs(age, sex, None, None, None, None, None, None, None, None, None, None, None, None, None, None, TSH, T3, TT4, None, FTI)
-            diagnosis_num = predict_diagnosis(inputs)
-            diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
-            st.markdown(f"<h1 style='text-align: center; color: {diagnosis_color};'>ML Diagnosis: {diagnosis_label}</h1>", unsafe_allow_html=True)
+        inputs = preprocess_inputs(age, sex, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TSH, T3, TT4, 0, FTI)
+        diagnosis_num = predict_diagnosis(inputs)
+        diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
+        st.markdown(f"<h1 style='text-align: center; color: {diagnosis_color};'>{diagnosis_label}</h1>", unsafe_allow_html=True)
 
 if __name__ == '__main__':
     main()
