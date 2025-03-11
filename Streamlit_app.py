@@ -240,8 +240,8 @@ def main():
     
     st.subheader("Prevention Tips")
 
-        if diagnosis_num == 1 or (1 in nlp_conditions):
-            st.markdown("""
+    if diagnosis_num == 1 or (1 in nlp_conditions):
+        st.markdown("""
         ### **For Hypothyroidism:**  
         - 🥦 **Eat a Balanced Diet:** Include iodine-rich foods (iodized salt, fish, dairy).  
         - 💊 **Monitor Selenium Intake:** Brazil nuts, tuna, and sunflower seeds help thyroid function.  
@@ -249,8 +249,8 @@ def main():
         - 😌 **Manage Stress:** Practice mindfulness, yoga, or meditation.  
         """)
 
-        if diagnosis_num == 2 or (2 in nlp_conditions):
-            st.markdown("""
+    if diagnosis_num == 2 or (2 in nlp_conditions):
+        st.markdown("""
         ### **For Hyperthyroidism:**  
         - 🍽️ **Control Iodine Intake:** Avoid excess iodine from seaweed, supplements, or certain medications.  
         - 🏃 **Stay Active:** Regular exercise supports metabolism and reduces stress.  
