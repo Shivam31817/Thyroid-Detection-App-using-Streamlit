@@ -205,7 +205,7 @@ def main():
     if detect_button:
         with st.spinner("Making predictions..."):
             try:
-            inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, 
+                inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, 
                                        on_antithyroid_meds, sick, pregnant, thyroid_surgery, 
                                        I131_treatment, query_hypothyroid, query_hyperthyroid, 
                                        lithium, goitre, tumor, hypopituitary, psych, 
