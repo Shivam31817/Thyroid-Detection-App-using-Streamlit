@@ -69,8 +69,13 @@ def doctor_contact_info(predicted_diagnosis):
 
 # Streamlit app
 def main():
+    
+     # Title color
+    title_color = '#F63366'
     # Title
+    title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diagnosis Predictor</h1>"
     st.markdown(title_css, unsafe_allow_html=True)
+
 
     # Add custom CSS for background image
     background_image = """
