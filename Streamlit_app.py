@@ -12,7 +12,7 @@ with open('model.pkl', 'rb') as f:
 diagnoses = {0: 'Negative', 1: 'Hypothyroid', 2: 'Hyperthyroid'}
 
 def preprocess_inputs(...):  # Keep your existing implementation
-    ...
+    
 
 def predict_diagnosis(inputs):
     return model.predict([inputs])[0]
