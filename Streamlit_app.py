@@ -6,8 +6,12 @@ import re
 import numpy as np
 
 # Load the trained model
-with open('model.pkl', 'rb') as f:
-    model = pickle.load(f)
+try:
+    with open('model.pkl', 'rb') as f:
+        model = pickle.load(f)
+except Exception as e:
+    st.error(f"Error loading the model: {e}")
+    model = None
 
 # Define diagnosis mapping dictionary
 diagnoses = {
@@ -61,8 +65,15 @@ def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid
 
 # Function to predict the diagnosis based on inputs
 def predict_diagnosis(inputs):
-    output = model.predict([inputs])[0]
-    return output
+    if model:
+        try:
+            output = model.predict([inputs])[0]
+            return output
+        except Exception as e:
+            st.error(f"Error during prediction: {e}")
+            return None
+    else:
+        return None
 
 # Function to analyze symptoms using NLP
 def analyze_symptoms(symptom_text):
@@ -78,6 +89,14 @@ def analyze_symptoms(symptom_text):
         'rapid heartbeat': 2,  # Hyperthyroid
         'sweating': 2,  # Hyperthyroid
         'heat intolerance': 2,  # Hyperthyroid
+        'anxiety': 2, # Hyperthyroid
+        'increased appetite': 2, # Hyperthyroid
+        'hair loss': 1, # Hypothyroid
+        'muscle weakness': 1, # Hypothyroid
+        'tremors': 2, # Hyperthyroid
+        'irritability': 2, # Hyperthyroid
+        'bradycardia': 1, # Hypothyroid (slow heart rate)
+        'tachycardia': 2, # Hyperthyroid (fast heart rate)
     }
 
     detected_conditions = set()
@@ -114,15 +133,23 @@ def chatbot():
         elif "TSH levels" in prompt.lower():
             response = "TSH (Thyroid Stimulating Hormone) levels are crucial for assessing thyroid function. Normal range is typically 0.4 - 4.0 μIU/mL."
         elif "hypothyroidism" in prompt.lower():
-            response = "Hypothyroidism is a condition where the thyroid gland doesn't produce enough thyroid hormones."
+            response = "Hypothyroidism is a condition where the thyroid gland doesn't produce enough thyroid hormones. Common symptoms include fatigue, weight gain, and cold intolerance."
         elif "hyperthyroidism" in prompt.lower():
-            response = "Hyperthyroidism is a condition where the thyroid gland produces too much thyroid hormone."
+            response = "Hyperthyroidism is a condition where the thyroid gland produces too much thyroid hormone. Common symptoms include weight loss, nervousness, and rapid heartbeat."
         elif "goitre" in prompt.lower():
             response = "A goitre is an enlargement of the thyroid gland."
         elif "treatment" in prompt.lower() and "hypothyroid" in prompt.lower():
             response = "Hypothyroidism is often treated with thyroid hormone replacement medication like levothyroxine."
         elif "treatment" in prompt.lower() and "hyperthyroid" in prompt.lower():
             response = "Hyperthyroidism can be treated with medications, radioiodine therapy, or surgery."
+        elif "symptoms of hypothyroid" in prompt.lower():
+            response = "Common symptoms of hypothyroidism include fatigue, weight gain, dry skin, cold intolerance, and constipation."
+        elif "symptoms of hyperthyroid" in prompt.lower():
+            response = "Common symptoms of hyperthyroidism include weight loss, nervousness, rapid heartbeat, sweating, and heat intolerance."
+        elif "T3" in prompt.upper() and "levels" in prompt.lower():
+            response = "T3 (Triiodothyronine) is another important thyroid hormone. Normal range is typically 0.8 - 2.0 ng/mL."
+        elif "T4" in prompt.upper() and "levels" in prompt.lower():
+            response = "TT4 (Total Thyroxine) is a key thyroid hormone. Normal range is typically 5.0 - 12.0 μg/dL."
         else:
             response = "I can provide information about common thyroid symptoms and conditions. Please ask specific questions."
 
@@ -258,7 +285,6 @@ def main():
         T3 = st.number_input('T3', value=None, help="Enter your T3 level.")
         FTI = st.number_input('FTI', value=None, help="Enter your FTI level.")
 
-    # Detect and Chatbot sections
     st.markdown("---")
     with st.container():
         col_detect, col_chatbot = st.columns([2, 1])
@@ -267,33 +293,19 @@ def main():
             clear_button = st.button('Clear', key='clear_button')
 
             if detect_button:
-                with st.spinner("Making predictions..."):
-                    inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
-                                                pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
-                                                lithium, goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
-
-                # Get prediction from ML model
-                diagnosis_num = predict_diagnosis(inputs)
-                diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
-
-                # Analyze symptoms using NLP
-                nlp_conditions = analyze_symptoms(symptom_text)
-                nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
-
-                # Conflict resolution: Check if NLP and ML contradict each other
-                if (1 in nlp_conditions and diagnosis_num == 2) or (2 in nlp_conditions and diagnosis_num == 1):
-                    st.markdown(
-                        f"<div style='background-color: orange; padding: 15px; border-radius: 10px;'>"
-                        f"<h2 style='text-align: center; color: white;'>⚠️ Conflict Detected!</h2>"
-                        f"<p style='text-align: center; color: white;'>ML Diagnosis: <b>{diagnosis_label}</b></p>"
-                        f"<p style='text-align: center; color: white;'>NLP Suggested Diagnosis: <b>{nlp_diagnosis}</b></p>"
-                        f"<p style='text-align: center; color: white;'>The system detected conflicting results. Please consult a doctor for confirmation.</p>"
-                        "</div>", unsafe_allow_html=True
-                    )
-                    doctor_contact_info("Conflict") # Show doctor info in case of conflict
+                if model is None:
+                    st.error("The machine learning model could not be loaded. Please check the file path.")
                 else:
-                    # Display diagnosis normally if no conflict
-                    st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                                f"<h1 style='text-align: center; color: white;'>ML Diagnosis: {diagnosis_label}</h1>"
-                                "</div>", unsafe_allow_html=True)
-                    doctor_contact_info(diagnosis_label) # Show doctor info based on ML diagnosis
+                    with st.spinner("Making predictions..."):
+                        inputs = preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick,
+                                                    pregnant, thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid,
+                                                    lithium, goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI)
+
+                        # Get prediction from ML model
+                        diagnosis_num = predict_diagnosis(inputs)
+                        if diagnosis_num is not None:
+                            diagnosis_label = diagnoses.get(diagnosis_num, 'Unknown')
+
+                            # Analyze symptoms using NLP
+                            nlp_conditions = analyze_symptoms(symptom_text)
+                            nlp
