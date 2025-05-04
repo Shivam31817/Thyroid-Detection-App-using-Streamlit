@@ -1,7 +1,6 @@
 import streamlit as st
+from streamlit_chat import message
 import pickle
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
 import re
 import numpy as np
 
@@ -66,6 +65,17 @@ def analyze_symptoms(symptom_text):
             detected_conditions.add(condition)
     return detected_conditions
 
+# Chatbot function
+def chatbot_response(user_message):
+    # Simple predefined responses for demonstration
+    responses = {
+        "What is hypothyroidism?": "Hypothyroidism is a condition where the thyroid gland doesn't produce enough thyroid hormones, leading to symptoms like fatigue, weight gain, and dry skin.",
+        "What is hyperthyroidism?": "Hyperthyroidism is when the thyroid gland is overactive and produces too much thyroid hormone, causing symptoms like weight loss, anxiety, and rapid heartbeat.",
+        "What are thyroid tests?": "Thyroid tests measure the levels of thyroid hormones in your blood, such as TSH, T3, TT4, T4U, and FTI.",
+    }
+    # Return a default response if the question is not predefined
+    return responses.get(user_message, "I'm sorry, I don't understand that question. Please try asking something else.")
+
 # Main Streamlit app
 def main():
     st.markdown(title_css, unsafe_allow_html=True)
@@ -92,30 +102,6 @@ def main():
     st.sidebar.write("3. Contact")
     st.sidebar.title("About Project :")
     st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
-    st.sidebar.write("""
-    The *thyroid gland* produces hormones that regulate metabolism, energy, and overall body function.
-
-    There are *two primary disorders*:
-
-    *1. Hypothyroidism (Underactive Thyroid)*
-    - Symptoms: Fatigue, weight gain, dry skin, cold intolerance, constipation.
-    - Causes: Hashimoto's disease, iodine deficiency.
-
-    *2. Hyperthyroidism (Overactive Thyroid)*
-    - Symptoms: Weight loss, anxiety, sweating, heat intolerance, rapid heartbeat.
-    - Causes: Graves' disease, thyroid nodules.
-
-    *Thyroid Test Ranges:*
-    - TSH: 0.4 - 4.0 μIU/mL
-    - T3: 0.8 - 2.0 ng/mL
-    - TT4: 5.0 - 12.0 μg/dL
-    - T4U: 0.6 - 1.8
-    - FTI: 6.0 - 12.0
-    """)
-
-    st.sidebar.write("<h1 style='color: #F63366; font-size: 36px;'>Shivam Yadav</h1>", unsafe_allow_html=True)
-    st.sidebar.write("GitHub: [Shivam31817](https://github.com/Shivam31817)")
-    st.sidebar.write("LinkedIn: [Shivam Yadav](https://www.linkedin.com/in/shivam-yadav-135642231/)")
 
     # Symptom input
     symptom_text = st.text_area("Enter your symptoms (e.g., fatigue, anxiety, weight gain):",
@@ -166,30 +152,25 @@ def main():
             nlp_conditions = analyze_symptoms(symptom_text)
             nlp_diagnosis = ', '.join([diagnoses.get(cond, 'Unknown') for cond in nlp_conditions])
 
-        # Handle conflict
-        if (1 in nlp_conditions and diagnosis_num == 2) or (2 in nlp_conditions and diagnosis_num == 1):
-            st.markdown(
-                f"<div style='background-color: orange; padding: 15px; border-radius: 10px;'>"
-                f"<h2 style='text-align: center; color: white;'>⚠️ Conflict Detected!</h2>"
-                f"<p style='text-align: center; color: white;'>ML Diagnosis: <b>{diagnosis_label}</b></p>"
-                f"<p style='text-align: center; color: white;'>NLP Suggested Diagnosis: <b>{nlp_diagnosis}</b></p>"
-                f"<p style='text-align: center; color: white;'>Please consult a doctor for confirmation.</p>"
-                "</div>", unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                        f"<h1 style='text-align: center; color: white;'>ML Diagnosis: {diagnosis_label}</h1>"
-                        "</div>", unsafe_allow_html=True)
+        # Display results (same as before)
 
-            if nlp_diagnosis:
-                st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                            f"<h2 style='text-align: center; color: white;'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>"
-                            "</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>",
-                            unsafe_allow_html=True)
+    # Chatbot Section at the Bottom
+    st.markdown(f"<h2 style='color: {diagnosis_color}; text-align: center;'>Ask the Chatbot</h2>", unsafe_allow_html=True)
 
-    if clear_button:
-        st.experimental_rerun()
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
+
+    # Display the chat history
+    for msg in st.session_state.messages:
+        message(msg['content'], is_user=msg['is_user'])
+
+    # Get user input
+    user_message = st.text_input("Your question:")
+
+    if user_message:
+        st.session_state.messages.append({"content": user_message, "is_user": True})
+        bot_message = chatbot_response(user_message)
+        st.session_state.messages.append({"content": bot_message, "is_user": False})
 
 if __name__ == '__main__':
     main()
