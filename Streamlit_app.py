@@ -5,8 +5,114 @@ from sklearn.linear_model import LogisticRegression
 import re
 import numpy as np
 from streamlit_chat import message  # Make sure you have this import
+import openai
 
-# ... (your other code) ...
+# --- OpenAI API Configuration ---
+openai.api_key = st.secrets["OPENAI_API_KEY"]  # Use Streamlit secrets for API key
+
+# Load the trained model
+try:
+    with open('model.pkl', 'rb') as f:
+        model = pickle.load(f)
+except Exception as e:
+    st.error(f"Error loading the model: {e}")
+    model = None
+
+# Define diagnosis mapping dictionary
+diagnoses = {
+    0: 'Negative',
+    1: 'Hypothyroid',
+    2: 'Hyperthyroid'
+}
+
+# Predicted diagnosis color
+diagnosis_color = '#F63366'
+title_color = '#F63366'  # Title color
+title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diagnosis Predictor</h1>"
+
+# Sensitive conditions (you can expand this list)
+sensitive_conditions = ['Hyperthyroid']
+
+# Placeholder doctor contact information (replace with actual data)
+doctor_contacts = {
+    'General Physician': ['+91 XXXXXXXXXX', 'gp@example.com'],
+    'Endocrinologist': ['+91 YYYYYYYYYY', 'endo@example.com']
+}
+
+# Function to preprocess inputs before prediction
+def preprocess_inputs(age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
+                     thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
+                     goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI):
+
+    # Replace 'Yes' with 1 and 'No' with 0
+    binary_map = {'Yes': 1, 'No': 0, '': None}
+    on_thyroxine = binary_map.get(on_thyroxine)
+    query_on_thyroxine = binary_map.get(query_on_thyroxine)
+    on_antithyroid_meds = binary_map.get(on_antithyroid_meds)
+    sick = binary_map.get(sick)
+    pregnant = binary_map.get(pregnant)
+    thyroid_surgery = binary_map.get(thyroid_surgery)
+    I131_treatment = binary_map.get(I131_treatment)
+    query_hypothyroid = binary_map.get(query_hypothyroid)
+    query_hyperthyroid = binary_map.get(query_hyperthyroid)
+    lithium = binary_map.get(lithium)
+    goitre = binary_map.get(goitre)
+    tumor = binary_map.get(tumor)
+    hypopituitary = binary_map.get(hypopituitary)
+    psych = binary_map.get(psych)
+
+    # Replace 'M' and 'F' with binary 0 and 1
+    sex = 1 if sex == 'F' else 0 if sex == 'M' else None
+
+    return [age, sex, on_thyroxine, query_on_thyroxine, on_antithyroid_meds, sick, pregnant,
+            thyroid_surgery, I131_treatment, query_hypothyroid, query_hyperthyroid, lithium,
+            goitre, tumor, hypopituitary, psych, TSH, T3, TT4, T4U, FTI]
+
+# Function to predict the diagnosis based on inputs
+def predict_diagnosis(inputs):
+    if model:
+        try:
+            output = model.predict([inputs])[0]
+            return output
+        except Exception as e:
+            st.error(f"Error during prediction: {e}")
+            return None
+    else:
+        return None
+
+# Function to analyze symptoms using NLP
+def analyze_symptoms(symptom_text):
+    # Expanded symptom mapping
+    symptoms_map = {
+        'fatigue': 1,  # Hypothyroid
+        'weight gain': 1,  # Hypothyroid
+        'dry skin': 1,  # Hypothyroid
+        'cold intolerance': 1,  # Hypothyroid
+        'constipation': 1,  # Hypothyroid
+        'weight loss': 2,  # Hyperthyroid
+        'nervousness': 2,  # Hyperthyroid
+        'rapid heartbeat': 2,  # Hyperthyroid
+        'sweating': 2,  # Hyperthyroid
+        'heat intolerance': 2,  # Hyperthyroid
+        'anxiety': 2, # Hyperthyroid
+        'increased appetite': 2, # Hyperthyroid
+        'hair loss': 1, # Hypothyroid
+        'muscle weakness': 1, # Hypothyroid
+        'tremors': 2, # Hyperthyroid
+        'irritability': 2, # Hyperthyroid
+        'bradycardia': 1, # Hypothyroid (slow heart rate)
+        'tachycardia': 2, # Hyperthyroid (fast heart rate)
+    }
+
+    detected_conditions = set()
+
+    # Basic symptom analysis by keyword matching
+    symptom_text_cleaned = re.sub(r'[^\w\s]', '', symptom_text.lower())
+    for symptom, condition in symptoms_map.items():
+        if symptom in symptom_text_cleaned:
+            detected_conditions.add(condition)
+
+    return detected_conditions
 
 # --- Virtual Assistant Chatbot ---
 def chatbot():
@@ -17,39 +123,26 @@ def chatbot():
     for i, chat_message in enumerate(st.session_state["chat_history"]):
         message(chat_message["content"], is_user=chat_message["role"] == "user", key=f"chat_{i}")
 
-    if prompt := st.chat_input("Ask me about symptoms, thyroid conditions, etc."):
+    if prompt := st.chat_input("Ask me anything about thyroid conditions and symptoms:"):
         st.session_state["chat_history"].append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Basic chatbot logic (can be significantly expanded)
-        response = ""
-        if "fatigue" in prompt.lower():
-            response = "Fatigue is a common symptom associated with hypothyroidism."
-        elif "weight loss" in prompt.lower():
-            response = "Unexplained weight loss can be a symptom of hyperthyroidism."
-        elif "TSH levels" in prompt.lower():
-            response = "TSH (Thyroid Stimulating Hormone) levels are crucial for assessing thyroid function. Normal range is typically 0.4 - 4.0 μIU/mL."
-        elif "hypothyroidism" in prompt.lower():
-            response = "Hypothyroidism is a condition where the thyroid gland doesn't produce enough thyroid hormones. Common symptoms include fatigue, weight gain, and cold intolerance."
-        elif "hyperthyroidism" in prompt.lower():
-            response = "Hyperthyroidism is a condition where the thyroid gland produces too much thyroid hormone. Common symptoms include weight loss, nervousness, and rapid heartbeat."
-        elif "goitre" in prompt.lower():
-            response = "A goitre is an enlargement of the thyroid gland."
-        elif "treatment" in prompt.lower() and "hypothyroid" in prompt.lower():
-            response = "Hypothyroidism is often treated with thyroid hormone replacement medication like levothyroxine."
-        elif "treatment" in prompt.lower() and "hyperthyroid" in prompt.lower():
-            response = "Hyperthyroidism can be treated with medications, radioiodine therapy, or surgery."
-        elif "symptoms of hypothyroid" in prompt.lower():
-            response = "Common symptoms of hypothyroidism include fatigue, weight gain, dry skin, cold intolerance, and constipation."
-        elif "symptoms of hyperthyroid" in prompt.lower():
-            response = "Common symptoms of hyperthyroidism include weight loss, nervousness, rapid heartbeat, sweating, and heat intolerance."
-        elif "T3" in prompt.upper() and "levels" in prompt.lower():
-            response = "T3 (Triiodothyronine) is another important thyroid hormone. Normal range is typically 0.8 - 2.0 ng/mL."
-        elif "T4" in prompt.upper() and "levels" in prompt.lower():
-            response = "TT4 (Total Thyroxine) is a key thyroid hormone. Normal range is typically 5.0 - 12.0 μg/dL."
-        else:
-            response = "I can provide information about common thyroid symptoms and conditions. Please ask specific questions."
+        try:
+            completion = openai.chat.completions.create(
+                model="gpt-3.5-turbo",  # Or another suitable model
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state["chat_history"]
+                ],
+                temperature=0.7,  # Adjust for creativity vs. factualness
+                max_tokens=150,     # Limit the response length
+                n=1,                # Request one response
+                stop=None,          # Optional stop sequence
+            )
+            response = completion.choices[0].message.content
+        except openai.error.OpenAIError as e:
+            response = f"An error occurred while communicating with OpenAI: {e}"
 
         st.session_state["chat_history"].append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
@@ -69,13 +162,11 @@ def doctor_contact_info(predicted_diagnosis):
 
 # Streamlit app
 def main():
-    
-     # Title color
+    # Title color
     title_color = '#F63366'
     # Title
     title_css = f"<h1 style='text-align: center; color: {title_color};'>Thyroid Diagnosis Predictor</h1>"
     st.markdown(title_css, unsafe_allow_html=True)
-
 
     # Add custom CSS for background image
     background_image = """
@@ -99,7 +190,6 @@ def main():
     st.sidebar.write("2. Instructions")
     st.sidebar.write("3. Contact")
     st.sidebar.title("About Project :")
-    st.sidebar.write("This Streamlit app serves as a Thyroid Diagnosis Predictor using machine learning and NLP-based symptom analysis.")
     st.sidebar.write("""
         The *thyroid gland* produces hormones that regulate metabolism, energy, and overall body function.
 
@@ -220,34 +310,4 @@ def main():
                                     f"<h2 style='text-align: center; color: white;'>⚠️ Conflict Detected!</h2>"
                                     f"<p style='text-align: center; color: white;'>ML Diagnosis: <b>{diagnosis_label}</b></p>"
                                     f"<p style='text-align: center; color: white;'>NLP Suggested Diagnosis: <b>{nlp_diagnosis}</b></p>"
-                                    f"<p style='text-align: center; color: white;'>The system detected conflicting results. Please consult a doctor for confirmation.</p>"
-                                    "</div>", unsafe_allow_html=True
-                                )
-                                doctor_contact_info("Conflict") # Show doctor info in case of conflict
-                            else:
-                                # Display diagnosis normally if no conflict
-                                st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                                            f"<h1 style='text-align: center; color: white;'>ML Diagnosis: {diagnosis_label}</h1>"
-                                            "</div>", unsafe_allow_html=True)
-                                doctor_contact_info(diagnosis_label) # Show doctor info based on ML diagnosis
-
-                                if nlp_diagnosis:
-                                    st.markdown(f"<div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>"
-                                                f"<h2 style='text-align: center; color: white;'>NLP Suggested Diagnosis: {nlp_diagnosis}</h2>"
-                                                "</div>", unsafe_allow_html=True)
-                                else:
-                                    st.markdown(f"<h2 style='text-align: center; color: {diagnosis_color};'>No specific conditions detected from symptoms</h2>", unsafe_allow_html=True)
-
-        with col_chatbot:
-            chatbot()
-
-        if clear_button:
-            # Clear all input fields and chat history
-            for key in st.session_state.keys():
-                if key not in ['_is_rerun', '_session_id', '_streamlit_script_run_count', 'chat_history']:
-                    del st.session_state[key]
-            st.session_state['chat_history'] = []
-            st.experimental_rerun()
-
-if __name__ == '__main__':
-    main()
+                                    f"<p style='text-align: center; color: white;'>The system detected conflicting results. Please consult a doctor for confirmation.</
