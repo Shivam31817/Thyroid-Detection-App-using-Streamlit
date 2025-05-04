@@ -310,4 +310,10 @@ def main():
                                     f"<h2 style='text-align: center; color: white;'>⚠️ Conflict Detected!</h2>"
                                     f"<p style='text-align: center; color: white;'>ML Diagnosis: <b>{diagnosis_label}</b></p>"
                                     f"<p style='text-align: center; color: white;'>NLP Suggested Diagnosis: <b>{nlp_diagnosis}</b></p>"
-                                    f"<p style='text-align: center; color: white;'>The system detected conflicting results. Please consult a doctor for confirmation.</
+                                    f"<p style='text-align: center; color: white;'>The system detected conflicting results. Please consult a doctor for confirmation.</p>"
+                                    "</div>", unsafe_allow_html=True
+                                )
+                                doctor_contact_info("Conflict") # Show doctor info in case of conflict
+                            else:
+                                # Display diagnosis normally if no conflict
+                                st.markdown(f"<div style='background
