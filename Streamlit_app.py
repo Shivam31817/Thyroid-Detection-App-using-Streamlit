@@ -316,22 +316,14 @@ def main():
                                 doctor_contact_info("Conflict") # Show doctor info in case of conflict
                             else:
                                 # Display diagnosis normally if no conflict
-                                 st.markdown(f"""
-                                    <div style='background-color: {diagnosis_color}; padding: 20px; border-radius: 10px;'>
-
-                                        <h2 style='text-align: center; color: white;'>🧬 Predicted Diagnosis: <b>{diagnosis_label}</b></h2>
-                                    </div>
-                                """, unsafe_allow_html=True)
-
-                                # Show doctor contact info if needed
+                                st.markdown(
+                                    f"<div style='background-color: {diagnosis_color}; padding: 15px; border-radius: 10px;'>"
+                                    f"<h2 style='text-align: center; color: white;'>Diagnosis Result</h2>"
+                                    f"<p style='text-align: center; color: white; font-size: 24px;'>Predicted Condition: <b>{diagnosis_label}</b></p>"
+                                    "</div>", unsafe_allow_html=True
+                                )
                                 doctor_contact_info(diagnosis_label)
-
-        with col_chatbot:
-            chatbot()
-
-    if clear_button:
-        st.experimental_rerun()
-
-# Run the app
-if __name__ == '__main__':
-    main()
+                                with col_chatbot:
+                                    chatbot()
+        if clear_button:
+            st.experimental_rerun()
